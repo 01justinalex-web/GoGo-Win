@@ -1,0 +1,2852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ApexWin - Real Money Gaming & Admin Panel</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bgDark: '#050711',
+            surfaceDark: '#0c1024',
+            cardDark: '#131936',
+            neonRed: '#ff2e54',
+            neonGreen: '#00ff88',
+            neonCyan: '#00f0ff',
+            neonPurple: '#9d4edd',
+            goldGlow: '#ffb703'
+          },
+          boxShadow: {
+            '3d-red': '0 12px 30px -4px rgba(255, 46, 84, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
+            '3d-green': '0 12px 30px -4px rgba(0, 255, 136, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
+            '3d-purple': '0 10px 28px -4px rgba(157, 78, 221, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35)',
+            'admin-glow': '0 0 25px -3px rgba(157, 78, 221, 0.5)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap');
+    
+    * {
+      font-family: 'Outfit', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+    
+    .font-hud {
+      font-family: 'Orbitron', monospace;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #161b3d 0%, #070914 65%, #030408 100%);
+      color: #f1f5f9;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .user-mode-pad {
+      padding-bottom: 96px;
+    }
+
+    .glass-3d {
+      background: linear-gradient(135deg, rgba(25, 33, 70, 0.75) 0%, rgba(10, 14, 34, 0.88) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    }
+
+    .game-card-3d {
+      position: relative;
+      border-radius: 1.5rem;
+      transition: all 0.25s ease;
+    }
+    .game-card-3d:active {
+      transform: scale(0.97);
+    }
+
+    .game-canvas-box {
+      position: relative;
+      width: 100%;
+      height: 310px;
+      overflow: hidden;
+      border-radius: 1.25rem;
+      background: radial-gradient(ellipse at 50% 80%, #12193b 0%, #050713 85%);
+      box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.85);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes float3D {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    .animate-float-3d {
+      animation: float3D 3.5s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 46, 84, 0.8)); }
+      50% { filter: drop-shadow(0 0 20px rgba(255, 46, 84, 1)); }
+    }
+    .glow-jet {
+      animation: pulseGlow 1.8s infinite alternate;
+    }
+
+    .nav-btn {
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #7928ca;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body class="antialiased user-mode-pad" id="mainBody">
+
+  <!-- FLOATING ADMIN / APP TOGGLE SWITCHER -->
+  <div class="fixed top-20 right-3 z-50 flex flex-col items-end gap-2">
+    <button onclick="toggleAdminPrompt()" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-3 py-1.5 rounded-full text-[11px] font-black shadow-lg shadow-purple-900/60 border border-purple-300/40 flex items-center gap-1.5 active:scale-95 transition">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span id="roleBadge">Admin Panel</span>
+    </button>
+  </div>
+
+  <!-- ADMIN PASSCODE MODAL -->
+  <div id="adminPinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
+    <div class="glass-3d p-6 rounded-3xl border border-purple-500/40 max-w-xs w-full space-y-4 text-center shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-purple-600/30 border border-purple-400 text-purple-300 flex items-center justify-center mx-auto text-xl font-black">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <div>
+        <h3 class="text-sm font-extrabold text-white">Admin Security Access</h3>
+        <p class="text-xs text-slate-300 mt-1">Enter Master PIN to open Admin Panel</p>
+      </div>
+      <div>
+        <input type="password" id="adminPinInput" placeholder="Enter PIN (Default: 7860)" maxlength="6" class="w-full text-center bg-slate-900 border border-purple-500/50 rounded-xl py-2 px-3 text-sm font-hud tracking-widest text-white focus:outline-none focus:border-purple-400">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="closeAdminPinModal()" class="py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">Cancel</button>
+        <button onclick="verifyAdminPin()" class="py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-xs font-bold active:scale-95 shadow">Unlock</button>
+      </div>
+      <p class="text-[10px] text-slate-500">Default PIN: 7860 or 1234</p>
+    </div>
+  </div>
+
+  <!-- BROADCAST ANNOUNCEMENT BANNER -->
+  <div id="broadcastBanner" class="hidden bg-gradient-to-r from-amber-600 via-pink-600 to-purple-600 px-4 py-2 text-center text-xs font-bold text-white shadow-lg sticky top-0 z-40 flex items-center justify-between">
+    <div class="flex items-center gap-2 mx-auto">
+      <i class="fa-solid fa-bullhorn text-amber-200"></i>
+      <span id="broadcastText">Instant deposits active via Google Pay & UPI!</span>
+    </div>
+    <button onclick="dismissBroadcast()" class="text-white hover:text-amber-200 text-sm ml-2">&times;</button>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 1. USER APP INTERFACE                                          -->
+  <!-- ============================================================== -->
+  <div id="userAppView">
+    <!-- TOP APP HEADER -->
+    <header class="sticky top-0 z-30 glass-3d px-4 py-3 flex items-center justify-between border-b border-indigo-900/40">
+      <div class="flex items-center space-x-3">
+        <div class="relative">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-500 via-pink-500 to-cyan-400 p-[2px] shadow-lg shadow-purple-900/50">
+            <div class="w-full h-full rounded-[14px] bg-[#0c1024] flex items-center justify-center font-black text-sm text-pink-300">
+              TG
+            </div>
+          </div>
+          <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-[#0c1024] rounded-full shadow-[0_0_8px_#10b981]"></span>
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <h1 id="userNameDisplay" class="text-sm font-extrabold tracking-wide text-white">Player</h1>
+            <span class="text-[9px] bg-purple-900/80 border border-purple-400/50 text-purple-200 px-2 py-0.5 rounded-full font-bold shadow">VIP 1</span>
+          </div>
+          <p class="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Connected
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Header Balance & Direct Deposit -->
+      <div class="flex items-center space-x-2">
+        <div onclick="switchTab('wallet')" class="cursor-pointer bg-[#0f1430] border border-amber-500/40 px-3 py-1.5 rounded-2xl flex items-center space-x-1.5 shadow-inner active:scale-95 transition">
+          <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-slate-900 flex items-center justify-center text-xs font-black shadow">
+            ₹
+          </div>
+          <span id="headerBalance" class="text-sm font-hud font-black text-amber-300">0.00</span>
+        </div>
+        <button onclick="openDepositModal()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-95 transition text-xs font-extrabold px-3 py-2 rounded-2xl text-white shadow-lg shadow-emerald-900/40 flex items-center gap-1 border border-emerald-300/30">
+          <i class="fa-solid fa-plus text-[10px]"></i> Add
+        </button>
+        <button onclick="toggleSound()" id="soundToggleBtn" class="w-8 h-8 rounded-2xl bg-slate-900 border border-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-xs shadow">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 opacity-0 pointer-events-none transform -translate-y-4">
+      <div class="glass-3d px-4 py-2.5 rounded-2xl shadow-2xl flex items-center space-x-2 text-xs border border-purple-500/40 text-white min-w-[270px] justify-center">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastMsg" class="font-bold">Notification</span>
+      </div>
+    </div>
+
+    <!-- DIRECT PAY HELPER MODAL -->
+    <div id="upiIntentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
+      <div class="glass-3d p-5 rounded-3xl border border-purple-500/40 max-w-sm w-full space-y-4 text-center shadow-2xl">
+        <div class="w-12 h-12 rounded-2xl bg-purple-600/30 border border-purple-400 text-purple-300 flex items-center justify-center mx-auto text-xl font-black shadow-lg">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-extrabold text-white">Opening UPI Application</h3>
+          <p class="text-xs text-slate-300 mt-1">If the UPI app does not open automatically, scan the QR code or copy the UPI ID.</p>
+        </div>
+        <div class="p-3 bg-slate-900/90 rounded-2xl border border-purple-500/30 flex items-center justify-between text-xs">
+          <div class="text-left">
+            <span class="text-[10px] text-slate-400 block font-semibold">UPI ID:</span>
+            <span id="intentModalUpiDisplay" class="font-hud font-bold text-amber-300">aethernoir01@okaxis</span>
+          </div>
+          <button onclick="copyUpiId()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-xl text-white font-bold text-xs flex items-center gap-1 active:scale-95 shadow">
+            <i class="fa-regular fa-copy"></i> Copy
+          </button>
+        </div>
+        <div class="space-y-2 pt-1">
+          <a id="modalDirectPayLink" href="#" class="block w-full py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-xl text-xs font-bold shadow-lg active:scale-95 text-center">
+            Open UPI / PhonePe / GPay
+          </a>
+          <button onclick="closeIntentModalAndShowQR()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700">
+            View Official QR Standee
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TERMS AND CONDITIONS MODAL -->
+    <div id="termsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
+      <div class="glass-3d p-5 rounded-3xl border border-purple-500/40 max-w-sm w-full space-y-4 max-h-[85vh] flex flex-col shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-file-contract text-purple-400 text-base"></i>
+            <h3 class="text-sm font-extrabold text-white">Terms of Real Money Wagering</h3>
+          </div>
+          <button onclick="closeTermsModal()" class="w-7 h-7 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="overflow-y-auto space-y-3 text-[11px] text-slate-300 pr-1">
+          <div>
+            <h4 class="font-bold text-white text-xs mb-1">1. Direct UPI & Instant Mode (No KYC)</h4>
+            <p class="leading-relaxed">Platform operates with instant verified settlements directly through UPI. Players enjoy zero KYC requirements for regular gameplay and payouts.</p>
+          </div>
+          <div>
+            <h4 class="font-bold text-white text-xs mb-1">2. Admin Verification on Deposits</h4>
+            <p class="leading-relaxed">Deposits are submitted via 12-digit UTR and reviewed in the Admin Panel for strict safety before wallet credit.</p>
+          </div>
+          <div>
+            <h4 class="font-bold text-white text-xs mb-1">3. Immutable Ledger</h4>
+            <p class="leading-relaxed">Every transaction, wager, and win/loss is timestamped and recorded in Firebase Realtime Database.</p>
+          </div>
+          <div>
+            <h4 class="font-bold text-white text-xs mb-1">4. Official Customer Support</h4>
+            <p class="leading-relaxed">For fast assistance with deposits or payouts, contact support on Telegram: <strong class="text-purple-300">@sameeralex</strong>.</p>
+          </div>
+        </div>
+
+        <button onclick="closeTermsModal()" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white rounded-xl text-xs font-bold shadow-lg active:scale-95">
+          I Understand & Accept
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="max-w-md mx-auto p-4 space-y-4">
+
+      <!-- TAB 1: HOME SCREEN -->
+      <section id="tab-home" class="space-y-4">
+        <!-- 3D HERO BALANCE CARD -->
+        <div class="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-[#1a1447] via-[#0e1335] to-[#080d24] border border-purple-500/40 shadow-3d-purple">
+          <div class="absolute -right-8 -top-8 w-44 h-44 bg-purple-600/25 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute right-4 bottom-2 text-purple-400/10 text-8xl font-black pointer-events-none select-none">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+
+          <div class="relative z-10">
+            <div class="flex items-center justify-between text-xs text-purple-300 font-bold uppercase tracking-wider mb-1">
+              <span class="flex items-center gap-1.5"><i class="fa-solid fa-wallet text-amber-400"></i> Real Cash Wallet</span>
+              <span class="flex items-center gap-1 text-emerald-400 text-[10px] font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                <i class="fa-solid fa-lock"></i> 100% SECURE
+              </span>
+            </div>
+
+            <div class="flex items-baseline space-x-1 my-2">
+              <span class="text-2xl font-black text-amber-400">₹</span>
+              <span id="mainWalletBalance" class="text-4xl font-hud font-black tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">0.00</span>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-purple-800/40 mt-1">
+              <div>
+                <span>Available: </span>
+                <span id="availablePaiseText" class="text-white font-bold font-hud">₹0.00</span>
+              </div>
+              <div>
+                <span>Reserved: </span>
+                <span id="reservedPaiseText" class="text-amber-400 font-bold font-hud">₹0.00</span>
+              </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="grid grid-cols-2 gap-3 mt-4">
+              <button onclick="openDepositModal()" class="py-2.5 px-3 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 transition rounded-2xl font-extrabold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-purple-900/50 border border-purple-400/30 text-white">
+                <i class="fa-solid fa-bolt text-amber-300 text-sm"></i>
+                <span>Deposit (UPI / QR)</span>
+              </button>
+              <button onclick="openWithdrawSubTab()" class="py-2.5 px-3 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 active:scale-95 transition rounded-2xl font-extrabold text-xs flex items-center justify-center space-x-2 text-slate-200 shadow">
+                <i class="fa-solid fa-money-bill-transfer text-emerald-400"></i>
+                <span>Instant Payout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DIRECT UPI BANNER -->
+        <div onclick="openDepositModal()" class="cursor-pointer glass-3d p-3.5 rounded-2xl flex items-center justify-between border-l-4 border-l-[#1a73e8] hover:border-blue-400 transition active:scale-[0.99]">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-2xl bg-purple-600/30 border border-purple-400 flex items-center justify-center text-purple-300 text-base font-black shadow-md">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-black text-white flex items-center gap-1.5">
+                Direct UPI Deposit <span id="minDepositBadge" class="text-[9px] bg-emerald-500 text-slate-950 font-black px-1.5 py-0.2 rounded-full uppercase">Min ₹100</span>
+              </h4>
+              <p class="text-[11px] text-slate-300">UPI ID: <span id="bannerUpiDisplay" class="font-hud font-bold text-amber-300">aethernoir01@okaxis</span></p>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-xs text-purple-400 mr-1"></i>
+        </div>
+
+        <!-- 3D / 4D GAMES SHOWCASE -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-300 font-hud flex items-center gap-1.5">
+              <i class="fa-solid fa-fire text-amber-400"></i> Trending 3D/4D Real Games
+            </h3>
+            <button onclick="switchTab('games')" class="text-xs font-bold text-purple-400 hover:text-purple-300">View All</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3.5">
+            <!-- 3D Aviator Card -->
+            <div onclick="launchGame('aviator')" class="game-card-3d cursor-pointer rounded-3xl p-4 bg-gradient-to-b from-[#2d0914] via-[#1a0815] to-[#0d0714] border-2 border-red-500/50 shadow-3d-red overflow-hidden group">
+              <div class="flex items-center justify-between relative z-10 mb-2">
+                <span class="text-[9px] font-black uppercase tracking-wider bg-red-600 text-white px-2 py-0.5 rounded-full shadow-[0_0_8px_#ef4444]">
+                  HOT 4D
+                </span>
+                <span class="font-hud text-[10px] text-amber-300 font-bold bg-black/50 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                  100X
+                </span>
+              </div>
+
+              <div class="relative h-24 flex items-center justify-center my-1">
+                <div class="relative z-10 animate-float-3d">
+                  <svg class="w-20 h-20 glow-jet" viewBox="0 0 160 160" fill="none">
+                    <path d="M42 98 L12 118 L34 94 Z" fill="#ff5d00"/>
+                    <path d="M50 82 L70 120 L90 82 Z" fill="#ff597a"/>
+                    <path d="M85 55 L132 88 L98 42 Z" fill="#99001f"/>
+                    <path d="M125 35 Q115 50 45 92 Q40 95 38 92 Q36 88 44 82 Q85 55 125 35 Z" fill="#ff3358"/>
+                    <path d="M105 45 Q98 52 82 62 Q85 55 96 48 Z" fill="#7bf0ff"/>
+                  </svg>
+                </div>
+                <div class="absolute bottom-0 right-1 bg-gradient-to-r from-red-600 to-pink-600 text-[9px] font-hud font-black px-2 py-0.5 rounded-lg text-white">
+                  CRASH
+                </div>
+              </div>
+
+              <div class="relative z-10 mt-1">
+                <h4 class="font-extrabold text-sm text-white">Aviator Crash</h4>
+                <p class="text-[10px] text-slate-300">Live Multiplier 4D Rocket</p>
+                <div class="mt-2.5 flex items-center justify-between">
+                  <span class="text-emerald-400 font-hud font-bold text-xs">Min ₹10</span>
+                  <span class="bg-gradient-to-r from-red-600 to-pink-600 text-white font-extrabold text-[10px] uppercase px-3 py-1 rounded-xl shadow">PLAY</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3D Fruit Chop Card -->
+            <div onclick="launchGame('fruit')" class="game-card-3d cursor-pointer rounded-3xl p-4 bg-gradient-to-b from-[#08241b] via-[#061814] to-[#04100d] border-2 border-emerald-400/50 shadow-3d-green overflow-hidden group">
+              <div class="flex items-center justify-between relative z-10 mb-2">
+                <span class="text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-full font-bold shadow-[0_0_8px_#00ff88]">
+                  SKILL 3D
+                </span>
+                <span class="font-hud text-[10px] text-amber-300 font-bold bg-black/50 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                  2X WIN
+                </span>
+              </div>
+
+              <div class="relative h-24 flex items-center justify-center my-1">
+                <div class="relative z-10 animate-float-3d">
+                  <svg class="w-20 h-20" viewBox="0 0 160 160" fill="none">
+                    <path d="M20 30 Q80 80 145 130" stroke="#00ffff" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M48 68 C45 35 110 30 115 62 Z" fill="#047857"/>
+                    <path d="M52 66 C50 40 105 35 111 62 Z" fill="#ff3b69"/>
+                    <path d="M45 78 C52 112 118 108 116 78 Z" fill="#047857"/>
+                    <path d="M48 80 C55 106 112 102 112 80 Z" fill="#ff3b69"/>
+                  </svg>
+                </div>
+                <div class="absolute bottom-0 right-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-[9px] font-hud font-black px-2 py-0.5 rounded-lg text-slate-950">
+                  NINJA
+                </div>
+              </div>
+
+              <div class="relative z-10 mt-1">
+                <h4 class="font-extrabold text-sm text-white">Fruit Chop</h4>
+                <p class="text-[10px] text-slate-300">Juicy 3D Slice Tournament</p>
+                <div class="mt-2.5 flex items-center justify-between">
+                  <span class="text-emerald-400 font-hud font-bold text-xs">Min ₹10</span>
+                  <span class="bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-[10px] uppercase px-3 py-1 rounded-xl shadow">PLAY</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIVE WINS TICKER -->
+        <div class="glass-3d p-3 rounded-2xl flex items-center space-x-3 text-xs border border-purple-500/20 overflow-hidden">
+          <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 font-bold rounded-lg shrink-0 flex items-center gap-1 border border-emerald-500/30">
+            <i class="fa-solid fa-trophy text-amber-400"></i> Live Wins
+          </span>
+          <div class="relative w-full overflow-hidden h-5">
+            <div class="absolute whitespace-nowrap text-[11px] text-slate-300 flex items-center space-x-4 animate-pulse">
+              <span>User9482 won ₹350 on Aviator 3D (3.5x)</span>
+              <span>•</span>
+              <span>Aman K. won ₹720 on Fruit Chop</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- REFERRAL BANNER -->
+        <div onclick="switchTab('referral')" class="cursor-pointer rounded-3xl p-4 bg-gradient-to-r from-amber-600/30 via-purple-900/40 to-pink-900/30 border border-amber-500/40 flex items-center justify-between shadow-lg active:scale-[0.99] transition">
+          <div class="space-y-1">
+            <div class="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1">
+              <i class="fa-solid fa-gift"></i> Refer & Earn Real Cash
+            </div>
+            <h4 class="font-extrabold text-sm text-white">Earn ₹50 on Every Active Friend</h4>
+            <p class="text-[11px] text-slate-300">Instant wallet credit on their first deposit</p>
+          </div>
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center text-xl shrink-0 shadow-lg font-black">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: GAMES ARENA -->
+      <section id="tab-games" class="hidden space-y-4">
+        <div id="gameScreenContainer" class="hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <button onclick="closeCurrentGame()" class="text-xs font-bold text-slate-200 hover:text-white flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 shadow active:scale-95">
+              <i class="fa-solid fa-arrow-left"></i> Exit Game
+            </button>
+            <div class="flex items-center gap-2">
+              <span id="currentGameTitle" class="text-xs font-hud font-black uppercase tracking-wider text-purple-300">Game Arena</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] animate-ping"></span>
+            </div>
+          </div>
+
+          <!-- Aviator Canvas View -->
+          <div id="aviatorEngineView" class="hidden space-y-3">
+            <div class="game-canvas-box border-2 border-red-500/50 shadow-3d-red relative">
+              <canvas id="aviatorCanvas"></canvas>
+              <div id="aviatorOverlay" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span id="aviatorMultiplierText" class="text-5xl font-hud font-black tracking-tight text-white drop-shadow-[0_4px_16px_rgba(255,46,84,0.9)]">1.00x</span>
+                <span id="aviatorStatusText" class="text-xs uppercase font-hud tracking-widest text-slate-300 font-bold mt-1">Waiting for flight...</span>
+              </div>
+              <div id="aviatorWaitBar" class="absolute bottom-0 left-0 h-1.5 bg-gradient-to-r from-red-600 via-amber-500 to-yellow-300 transition-all duration-100 w-0"></div>
+            </div>
+
+            <!-- Betting Controls -->
+            <div class="glass-3d p-4 rounded-3xl border border-red-500/40 space-y-3 shadow-lg">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-200">Wager Amount:</span>
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="adjustBet(-10)" class="w-7 h-7 bg-slate-800 rounded-lg text-xs font-bold active:scale-95 border border-slate-700">-</button>
+                  <div class="px-3 py-1 bg-slate-900 border border-purple-500/40 rounded-lg font-hud font-bold text-sm text-amber-300 flex items-center gap-1">
+                    ₹<span id="betAmountDisplay">20</span>
+                  </div>
+                  <button onclick="adjustBet(10)" class="w-7 h-7 bg-slate-800 rounded-lg text-xs font-bold active:scale-95 border border-slate-700">+</button>
+                  <button onclick="setQuickBet(50)" class="px-2 py-1 bg-slate-800 text-[11px] rounded-lg font-bold border border-slate-700">50</button>
+                  <button onclick="setQuickBet(100)" class="px-2 py-1 bg-slate-800 text-[11px] rounded-lg font-bold border border-slate-700">100</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5">
+                <button id="aviatorBetBtn" onclick="placeAviatorBet()" class="py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 rounded-2xl font-black text-sm uppercase tracking-wider text-slate-950 shadow-lg active:scale-95 transition border border-emerald-300/40">
+                  Place Bet (₹20)
+                </button>
+                <button id="aviatorCashoutBtn" onclick="cashoutAviator()" disabled class="py-3 bg-gradient-to-r from-amber-500 to-orange-500 opacity-50 cursor-not-allowed rounded-2xl font-black text-sm uppercase tracking-wider text-slate-950 shadow-lg active:scale-95 transition border border-amber-300/40">
+                  Cash Out
+                </button>
+              </div>
+            </div>
+
+            <!-- LIVE ALL BETS TABLE -->
+            <div class="glass-3d p-3.5 rounded-3xl border border-indigo-900/50 space-y-2.5 shadow-lg">
+              <div class="flex items-center justify-between pb-1.5 border-b border-slate-800/80">
+                <div class="flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span class="text-xs font-hud font-black uppercase tracking-wider text-white">All Bets (Live)</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-[10px] bg-slate-800/80 px-2 py-0.5 rounded-lg border border-slate-700 text-purple-300 font-hud font-bold">
+                    <span id="aviatorOnlineCount">238</span> Players
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-12 text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                <span class="col-span-4">User</span>
+                <span class="col-span-3 text-right">Bet</span>
+                <span class="col-span-2 text-center">Mult</span>
+                <span class="col-span-3 text-right">Cash Out</span>
+              </div>
+
+              <div id="liveBetsContainer" class="space-y-1.5 max-h-52 overflow-y-auto pr-0.5"></div>
+            </div>
+          </div>
+
+          <!-- Fruit Chop Canvas View -->
+          <div id="fruitEngineView" class="hidden space-y-3">
+            <div class="game-canvas-box border-2 border-emerald-400/50 shadow-3d-green relative">
+              <canvas id="fruitCanvas"></canvas>
+              <div id="fruitOverlay" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <div class="absolute top-3 left-4 text-xs font-hud font-bold text-white bg-slate-900/90 px-3 py-1 rounded-xl border border-emerald-500/40 shadow">
+                  Score: <span class="text-emerald-400 font-black" id="currentFruitScore">0</span>
+                </div>
+                <div class="absolute top-3 right-4 text-xs font-hud font-bold text-white bg-slate-900/90 px-3 py-1 rounded-xl border border-amber-500/40 shadow">
+                  Time: <span class="text-amber-400 font-black" id="currentFruitTimer">25s</span>
+                </div>
+
+                <div id="fruitStartPrompt" class="text-center p-5 bg-[#091512]/95 rounded-3xl border-2 border-emerald-400/50 pointer-events-auto shadow-2xl max-w-xs mx-auto">
+                  <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mb-2">
+                    <i class="fa-solid fa-lemon"></i>
+                  </div>
+                  <h3 class="text-base font-black text-white">3D Fruit Ninja</h3>
+                  <p class="text-xs text-slate-300 mt-1">Swipe across fruits! Reach score ≥ 15 to win 2X cash!</p>
+                  <div class="mt-4 flex items-center justify-center gap-2">
+                    <span class="text-xs text-slate-300 font-bold">Wager: ₹<span id="fruitBetDisplay">20</span></span>
+                    <button onclick="startFruitRound()" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg active:scale-95">
+                      Start (₹<span id="fruitBtnBet">20</span>)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-3d p-3 rounded-2xl flex items-center justify-between text-xs border border-emerald-500/30">
+              <span class="text-slate-300 font-bold">Select Bet:</span>
+              <div class="flex items-center space-x-1.5">
+                <button onclick="setFruitBet(10)" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold border border-slate-700">₹10</button>
+                <button onclick="setFruitBet(20)" class="px-3 py-1.5 rounded-xl bg-purple-600 font-bold border border-purple-400">₹20</button>
+                <button onclick="setFruitBet(50)" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold border border-slate-700">₹50</button>
+                <button onclick="setFruitBet(100)" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 font-bold border border-slate-700">₹100</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Games Selection List -->
+        <div id="gamesListView" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-black uppercase tracking-wider text-slate-300 font-hud flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-amber-400"></i> All Cash Tournaments (3D/4D)
+            </h2>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">Instant Play</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <!-- Aviator -->
+            <div onclick="launchGame('aviator')" class="game-card-3d cursor-pointer rounded-3xl p-4 bg-gradient-to-b from-[#2d0914] via-[#1a0815] to-[#0d0714] border-2 border-red-500/50 shadow-3d-red overflow-hidden group">
+              <div class="flex items-center justify-between relative z-10 mb-2">
+                <span class="text-[9px] font-black uppercase tracking-wider bg-red-600 text-white px-2 py-0.5 rounded-full shadow-[0_0_8px_#ef4444]">HOT 4D</span>
+                <span class="font-hud text-[10px] text-amber-300 font-bold bg-black/50 px-2 py-0.5 rounded-lg border border-amber-500/30">100X MULTIPLIER</span>
+              </div>
+              <div class="relative h-24 flex items-center justify-center my-1">
+                <div class="relative z-10 animate-float-3d">
+                  <svg class="w-20 h-20 glow-jet" viewBox="0 0 160 160" fill="none">
+                    <path d="M42 98 L12 118 L34 94 Z" fill="#ff5d00"/>
+                    <path d="M50 82 L70 120 L90 82 Z" fill="#ff597a"/>
+                    <path d="M85 55 L132 88 L98 42 Z" fill="#99001f"/>
+                    <path d="M125 35 Q115 50 45 92 Q40 95 38 92 Q36 88 44 82 Q85 55 125 35 Z" fill="#ff3358"/>
+                    <path d="M105 45 Q98 52 82 62 Q85 55 96 48 Z" fill="#7bf0ff"/>
+                  </svg>
+                </div>
+                <div class="absolute bottom-0 right-1 bg-gradient-to-r from-red-600 to-pink-600 text-[9px] font-hud font-black px-2 py-0.5 rounded-lg text-white">CRASH</div>
+              </div>
+              <div class="relative z-10 mt-1">
+                <h4 class="font-extrabold text-sm text-white">Aviator Crash 4D</h4>
+                <p class="text-[10px] text-slate-300">Live Multiplier 4D Rocket • 1,420 Active</p>
+                <div class="mt-2.5 flex items-center justify-between">
+                  <span class="text-emerald-400 font-hud font-bold text-xs">Min ₹10</span>
+                  <span class="bg-gradient-to-r from-red-600 to-pink-600 text-white font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded-xl shadow">PLAY NOW</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fruit Chop -->
+            <div onclick="launchGame('fruit')" class="game-card-3d cursor-pointer rounded-3xl p-4 bg-gradient-to-b from-[#08241b] via-[#061814] to-[#04100d] border-2 border-emerald-400/50 shadow-3d-green overflow-hidden group">
+              <div class="flex items-center justify-between relative z-10 mb-2">
+                <span class="text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-full font-bold shadow-[0_0_8px_#00ff88]">SKILL 3D</span>
+                <span class="font-hud text-[10px] text-amber-300 font-bold bg-black/50 px-2 py-0.5 rounded-lg border border-amber-500/30">2X WIN</span>
+              </div>
+              <div class="relative h-24 flex items-center justify-center my-1">
+                <div class="relative z-10 animate-float-3d">
+                  <svg class="w-20 h-20" viewBox="0 0 160 160" fill="none">
+                    <path d="M20 30 Q80 80 145 130" stroke="#00ffff" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M48 68 C45 35 110 30 115 62 Z" fill="#047857"/>
+                    <path d="M52 66 C50 40 105 35 111 62 Z" fill="#ff3b69"/>
+                    <path d="M45 78 C52 112 118 108 116 78 Z" fill="#047857"/>
+                    <path d="M48 80 C55 106 112 102 112 80 Z" fill="#ff3b69"/>
+                  </svg>
+                </div>
+                <div class="absolute bottom-0 right-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-[9px] font-hud font-black px-2 py-0.5 rounded-lg text-slate-950">NINJA</div>
+              </div>
+              <div class="relative z-10 mt-1">
+                <h4 class="font-extrabold text-sm text-white">Fruit Chop 3D Ninja</h4>
+                <p class="text-[10px] text-slate-300">Juicy 3D Slice Tournament • 890 Active</p>
+                <div class="mt-2.5 flex items-center justify-between">
+                  <span class="text-emerald-400 font-hud font-bold text-xs">Min ₹10</span>
+                  <span class="bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-[10px] uppercase px-3.5 py-1.5 rounded-xl shadow">PLAY NOW</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: WALLET & DIRECT UPI WITH APPROVAL WORKFLOW -->
+      <section id="tab-wallet" class="hidden space-y-4">
+        <div class="flex p-1 bg-slate-900/90 rounded-2xl border border-purple-900/50">
+          <button id="walletTabBtnDeposit" onclick="switchWalletSubTab('deposit')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-purple-600 text-white transition shadow">Deposit (UPI)</button>
+          <button id="walletTabBtnWithdraw" onclick="switchWalletSubTab('withdraw')" class="flex-1 py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition">Withdrawal</button>
+          <button id="walletTabBtnLedger" onclick="switchWalletSubTab('ledger')" class="flex-1 py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white transition">Audit Ledger</button>
+        </div>
+
+        <!-- SUBVIEW 1: DEPOSIT WITH UPI / QR -->
+        <div id="subview-deposit" class="space-y-4">
+          <div class="glass-3d p-4 rounded-3xl border border-purple-500/40 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-qrcode text-purple-400"></i> Direct UPI / QR Deposit
+              </h3>
+              <span id="depositMinBadge2" class="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">Min ₹100</span>
+            </div>
+
+            <p class="text-xs text-slate-300">
+              Transfer to UPI ID: <strong id="depositTargetUpiText" class="text-amber-300 font-hud">aethernoir01@okaxis</strong>. Admin verifies your UTR before wallet credit.
+            </p>
+
+            <!-- Presets -->
+            <div>
+              <label class="text-[11px] text-slate-400 font-semibold mb-1.5 block">Select Amount</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setDepositAmount(100)" class="deposit-preset-btn py-2.5 rounded-xl bg-purple-700 text-xs font-bold border border-purple-400 active:scale-95 text-white">₹100</button>
+                <button onclick="setDepositAmount(200)" class="deposit-preset-btn py-2.5 rounded-xl bg-slate-900 text-xs font-bold border border-slate-700 hover:border-purple-500 active:scale-95 text-slate-200">₹200</button>
+                <button onclick="setDepositAmount(500)" class="deposit-preset-btn py-2.5 rounded-xl bg-slate-900 text-xs font-bold border border-slate-700 hover:border-purple-500 active:scale-95 text-slate-200">₹500</button>
+              </div>
+              <div class="grid grid-cols-3 gap-2 mt-2">
+                <button onclick="setDepositAmount(1000)" class="deposit-preset-btn py-2.5 rounded-xl bg-slate-900 text-xs font-bold border border-slate-700 hover:border-purple-500 active:scale-95 text-slate-200">₹1,000</button>
+                <button onclick="setDepositAmount(2000)" class="deposit-preset-btn py-2.5 rounded-xl bg-slate-900 text-xs font-bold border border-slate-700 hover:border-purple-500 active:scale-95 text-slate-200">₹2,000</button>
+                <button onclick="setDepositAmount(5000)" class="deposit-preset-btn py-2.5 rounded-xl bg-slate-900 text-xs font-bold border border-slate-700 hover:border-purple-500 active:scale-95 text-slate-200">₹5,000</button>
+              </div>
+            </div>
+
+            <!-- Custom Input -->
+            <div>
+              <label class="text-[11px] text-slate-400 font-semibold mb-1 block">Custom Amount</label>
+              <div class="relative">
+                <span class="absolute left-3 top-2.5 text-slate-400 font-bold">₹</span>
+                <input type="number" id="customDepositInput" value="100" min="100" class="w-full bg-slate-900 border border-purple-500/40 rounded-xl py-2 pl-8 pr-4 text-sm font-hud font-bold text-white focus:outline-none focus:border-purple-400" oninput="onCustomAmountChange(this.value)">
+              </div>
+            </div>
+
+            <!-- Pay Intents -->
+            <div class="pt-1 space-y-2">
+              <button onclick="triggerPhonePeAppIntent()" class="w-full py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 active:scale-95 transition text-white font-black text-sm rounded-2xl shadow-lg flex items-center justify-center space-x-2 border border-blue-400/30">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Pay Via UPI App Directly</span>
+              </button>
+              <button onclick="showQRCodePayment()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 active:scale-95 transition text-slate-200 font-bold text-xs rounded-2xl flex items-center justify-center space-x-2 border border-slate-700">
+                <i class="fa-solid fa-qrcode text-purple-400 text-sm"></i>
+                <span>View Official QR Standee</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CLEAN QR STANDEE CARD -->
+          <div id="dynamicQrSection" class="glass-3d p-4 rounded-3xl border border-purple-500/40 space-y-4">
+            <div class="bg-[#f2f6fc] p-3 rounded-[32px] max-w-[310px] mx-auto shadow-2xl border border-blue-100/30">
+              <div class="bg-white rounded-[26px] p-5 pb-6 text-center shadow-sm border border-slate-100">
+                <div class="relative inline-block mx-auto">
+                  <img id="phonepeQrImg" alt="UPI QR Code" class="w-64 h-64 mx-auto rounded-xl object-contain block" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=aethernoir01@okaxis%26cu=INR" onerror="this.onerror=null; this.src='https://placehold.co/300x300/ffffff/000000?text=Scan+QR';">
+                  
+                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-slate-200/90 shadow-lg">
+                      <svg class="w-7 h-7" viewBox="0 0 48 48" fill="none">
+                        <path d="M43.6 20.1H42V20H24V28H35.3C33.7 32.7 29.2 36 24 36C17.4 36 12 30.6 12 24C12 17.4 17.4 12 24 12C27.1 12 29.8 13.2 31.9 15.1L37.6 9.4C34 6 29.3 4 24 4C13 4 4 13 4 24C4 35 13 44 24 44C35 44 43.9 35.2 43.9 24C43.9 22.7 43.8 21.4 43.6 20.1Z" fill="#FFC107"/>
+                        <path d="M6.3 14.7L12.9 19.5C14.7 15.1 18.9 12 24 12C27.1 12 29.8 13.2 31.9 15.1L37.6 9.4C34 6 29.3 4 24 4C16.8 4 10.5 8.4 6.3 14.7Z" fill="#FF3D00"/>
+                        <path d="M24 44C29.2 44 33.9 42.1 37.4 38.9L31.1 34C29.1 35.3 26.7 36 24 36C18.9 36 14.6 32.8 12.9 28.5L6.3 33.6C10.5 40 16.8 44 24 44Z" fill="#4CAF50"/>
+                        <path d="M43.6 20.1H42V20H24V28H35.3C34.5 30.3 33 32.4 31.1 34L37.4 38.9C36.9 39.3 44 34.1 44 24C44 22.7 43.8 21.4 43.6 20.1Z" fill="#1976D2"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-slate-700 font-semibold text-sm tracking-wide">
+                  UPI ID: <span id="standeeUpiText" class="font-normal font-sans text-slate-800">aethernoir01@okaxis</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Copy Box -->
+            <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-700 flex items-center justify-between text-xs">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-semibold">Active UPI ID:</span>
+                <strong id="copyBoxUpiText" class="text-amber-300 font-hud text-xs">aethernoir01@okaxis</strong>
+              </div>
+              <button onclick="copyUpiId()" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white rounded-xl font-bold flex items-center gap-1 shadow">
+                <i class="fa-regular fa-copy"></i> Copy UPI
+              </button>
+            </div>
+
+            <!-- 12-Digit UTR Verification Form (SUBMITS TO ADMIN APPROVAL) -->
+            <div class="p-3.5 bg-slate-900/90 rounded-2xl border border-purple-800/40 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <label class="text-[11px] font-bold text-slate-300 block">Submit 12-Digit UTR for Verification:</label>
+                <span class="text-[9px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-500/30">Admin Approval Req.</span>
+              </div>
+              <div class="flex gap-2">
+                <input type="text" id="depositUtrInput" maxlength="12" placeholder="e.g. 4289XXXXXXXX" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-purple-400">
+                <button onclick="submitDepositForAdminVerification()" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 active:scale-95 font-black text-xs text-slate-950 rounded-xl shadow">
+                  Submit
+                </button>
+              </div>
+              <p class="text-[10px] text-slate-400">Your request will be checked by the Admin Panel. Once approved, the amount will instantly appear in your wallet balance.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 2: WITHDRAWAL / PAYOUT (SUBMITS TO ADMIN APPROVAL) -->
+        <div id="subview-withdraw" class="hidden space-y-4">
+          <div class="glass-3d p-4 rounded-3xl border border-purple-500/40 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-money-bill-wave text-emerald-400"></i> Instant Bank / UPI Withdrawal
+              </h3>
+              <span class="text-[10px] bg-purple-900/50 text-purple-300 px-2 py-0.5 rounded-full font-bold">Admin Verified</span>
+            </div>
+
+            <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
+              <div>
+                <span class="text-slate-400">Withdrawable Balance:</span>
+                <div class="text-lg font-hud font-black text-amber-300" id="withdrawAvailableBalance">₹0.00</div>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-400">Min Withdrawal:</span>
+                <div id="minWithdrawLabel" class="font-bold text-slate-200 font-hud">₹100</div>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[11px] text-slate-400 font-semibold mb-1 block">Payout Method</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="selectWithdrawMethod('upi')" id="payoutMethodUpiBtn" class="py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs border border-purple-400 shadow">
+                  <i class="fa-solid fa-mobile-screen mr-1"></i> UPI VPA / Number
+                </button>
+                <button onclick="selectWithdrawMethod('bank')" id="payoutMethodBankBtn" class="py-2.5 rounded-xl bg-slate-900 text-slate-300 font-bold text-xs border border-slate-700">
+                  <i class="fa-solid fa-building-columns mr-1"></i> Bank Account
+                </button>
+              </div>
+            </div>
+
+            <div id="upiPayoutInputBox" class="space-y-1">
+              <label class="text-[11px] text-slate-400 font-semibold">Your UPI ID:</label>
+              <input type="text" id="withdrawUpiId" placeholder="e.g. yourname@okaxis" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-3 text-xs text-white focus:outline-none focus:border-purple-400">
+            </div>
+
+            <div id="bankPayoutInputBox" class="hidden space-y-2">
+              <div>
+                <label class="text-[11px] text-slate-400 font-semibold">Account Number:</label>
+                <input type="text" id="withdrawBankAcc" placeholder="Account Number" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-purple-400">
+              </div>
+              <div>
+                <label class="text-[11px] text-slate-400 font-semibold">IFSC Code:</label>
+                <input type="text" id="withdrawBankIfsc" placeholder="e.g. SBIN0001234" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-xs text-white uppercase focus:outline-none focus:border-purple-400">
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[11px] text-slate-400 font-semibold mb-1 block">Withdrawal Amount (₹)</label>
+              <input type="number" id="withdrawAmountInput" placeholder="Min ₹100" min="100" class="w-full bg-slate-900 border border-purple-500/40 rounded-xl py-2.5 px-3 text-sm font-hud font-bold text-white focus:outline-none focus:border-purple-400">
+            </div>
+
+            <button onclick="submitWithdrawalRequest()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-95 transition text-slate-950 font-black text-sm rounded-2xl shadow-lg border border-emerald-300/40">
+              Request Payout Transfer
+            </button>
+          </div>
+        </div>
+
+        <!-- SUBVIEW 3: AUDIT LEDGER -->
+        <div id="subview-ledger" class="hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase tracking-wider text-slate-300 font-hud">Double-Entry Immutable Ledger</h3>
+            <span class="text-[10px] text-purple-400 font-bold">Firebase Synced</span>
+          </div>
+          <div id="ledgerEntriesContainer" class="space-y-2"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: REFERRAL PROGRAM -->
+      <section id="tab-referral" class="hidden space-y-4">
+        <div class="glass-3d p-5 rounded-3xl border border-amber-500/40 text-center space-y-3 shadow-lg">
+          <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 flex items-center justify-center text-3xl mx-auto shadow-lg font-black">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <h2 class="text-lg font-black text-white">Invite Friends & Earn ₹50</h2>
+          <p class="text-xs text-slate-300 max-w-xs mx-auto">
+            Share your referral code. When your friend deposits min ₹100, receive an instant ₹50 ledger credit!
+          </p>
+
+          <div class="p-2.5 bg-slate-900/90 rounded-2xl border border-slate-700 flex items-center justify-between text-xs">
+            <span id="referralLinkText" class="font-mono text-purple-300 truncate max-w-[210px]">https://t.me/ApexWin_Bot?start=REF9821</span>
+            <button onclick="copyReferralLink()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 active:scale-95 rounded-xl text-white font-bold text-xs shrink-0 shadow">
+              Copy
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="shareOnTelegram()" class="py-2.5 bg-[#229ED9] hover:bg-[#1f8fc4] active:scale-95 transition text-white rounded-2xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
+              <i class="fa-brands fa-telegram"></i>
+              <span>Share Telegram</span>
+            </button>
+            <button onclick="shareOnWhatsApp()" class="py-2.5 bg-[#25D366] hover:bg-[#20ba59] active:scale-95 transition text-white rounded-2xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow">
+              <i class="fa-brands fa-whatsapp"></i>
+              <span>Share WhatsApp</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: PROFILE & SUPPORT (@sameeralex) -->
+      <section id="tab-profile" class="hidden space-y-4">
+        <div class="glass-3d p-5 rounded-3xl border border-purple-500/30 flex items-center space-x-4">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-500 to-cyan-400 p-0.5 shadow-xl">
+            <div class="w-full h-full bg-slate-900 rounded-2xl flex items-center justify-center text-2xl font-black text-pink-400">
+              <i class="fa-solid fa-user-astronaut"></i>
+            </div>
+          </div>
+          <div>
+            <h2 id="profileName" class="text-base font-extrabold text-white">Alex Gamer</h2>
+            <p class="text-xs text-slate-400">Telegram ID: <span id="profileTgId" class="text-purple-300 font-mono">TG-8865941</span></p>
+            <span class="inline-block mt-1 text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded-full">
+              <i class="fa-solid fa-bolt text-amber-400 mr-1"></i> No KYC Required (Instant Play)
+            </span>
+          </div>
+        </div>
+
+        <!-- Priority Customer Care Card (@sameeralex) -->
+        <div class="glass-3d p-4 rounded-3xl border border-purple-500/40 bg-gradient-to-r from-purple-900/30 to-indigo-900/30 space-y-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-white text-lg shadow-md">
+              <i class="fa-solid fa-headset"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">24/7 Priority Customer Care</h3>
+              <p class="text-xs text-slate-300">Fast assistance for UPI deposit or payout</p>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-700 flex items-center justify-between text-xs">
+            <div>
+              <span class="text-slate-400 block text-[10px]">Official Support Telegram:</span>
+              <strong class="text-purple-300 text-sm font-hud">@sameeralex</strong>
+            </div>
+            <a href="https://t.me/sameeralex" target="_blank" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow">
+              <i class="fa-brands fa-telegram"></i> Chat Now
+            </a>
+          </div>
+        </div>
+
+        <div class="glass-3d rounded-3xl divide-y divide-slate-800 border border-slate-800 overflow-hidden text-xs">
+          <div onclick="openTermsModal()" class="p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/40 active:scale-[0.99] transition">
+            <span class="flex items-center gap-2.5 text-slate-200 font-bold"><i class="fa-solid fa-file-shield text-purple-400 text-sm"></i> Terms of Real Money Wagering</span>
+            <i class="fa-solid fa-chevron-right text-slate-400 text-[11px]"></i>
+          </div>
+          <div onclick="resetUserWalletState()" class="p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-800/40 text-amber-400">
+            <span class="flex items-center gap-2.5"><i class="fa-solid fa-rotate-right"></i> Reset Test Player Session</span>
+            <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FLOATING BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 z-30 glass-3d border-t border-purple-900/40 px-2 py-2">
+      <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
+        <button id="nav-home" onclick="switchTab('home')" class="nav-btn flex flex-col items-center justify-center py-1 text-purple-400">
+          <i class="fa-solid fa-house text-base"></i>
+          <span class="text-[10px] font-bold mt-1">Home</span>
+        </button>
+
+        <button id="nav-games" onclick="switchTab('games')" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-gamepad text-base"></i>
+          <span class="text-[10px] font-bold mt-1">Games</span>
+        </button>
+
+        <button id="nav-wallet" onclick="switchTab('wallet')" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400 hover:text-white">
+          <div class="relative">
+            <i class="fa-solid fa-wallet text-base"></i>
+            <span class="w-1.5 h-1.5 bg-amber-400 rounded-full absolute -top-0.5 -right-1"></span>
+          </div>
+          <span class="text-[10px] font-bold mt-1">Wallet</span>
+        </button>
+
+        <button id="nav-referral" onclick="switchTab('referral')" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-gift text-base"></i>
+          <span class="text-[10px] font-bold mt-1">Referral</span>
+        </button>
+
+        <button id="nav-profile" onclick="switchTab('profile')" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-user text-base"></i>
+          <span class="text-[10px] font-bold mt-1">Profile</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 2. REAL-TIME ADMIN PANEL DASHBOARD VIEW                        -->
+  <!-- ============================================================== -->
+  <div id="adminPanelView" class="hidden min-h-screen bg-[#070914] text-slate-100 p-4 md:p-6 space-y-6 max-w-5xl mx-auto">
+    
+    <!-- Admin Topbar -->
+    <div class="glass-3d p-4 rounded-3xl border border-purple-500/50 flex flex-wrap items-center justify-between gap-4 shadow-admin-glow">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center text-white text-xl shadow-lg">
+          <i class="fa-solid fa-shield-cat"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-hud font-black text-white flex items-center gap-2">
+            APEX CONTROL CENTER <span class="text-[10px] bg-red-600/80 text-white px-2 py-0.5 rounded-full font-bold">ADMIN ROOT</span>
+          </h1>
+          <p class="text-xs text-slate-400">Firebase Realtime DB • Status: <span class="text-emerald-400 font-bold" id="dbStatusIndicator">Connected</span></p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button onclick="exitAdminView()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold text-slate-200 border border-slate-700 active:scale-95">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Back to Player App
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+      <div class="glass-3d p-4 rounded-2xl border border-purple-500/30">
+        <span class="text-xs text-slate-400 font-bold block">Pending Deposits</span>
+        <div class="text-2xl font-hud font-black text-amber-300 mt-1" id="statPendingDeposits">0</div>
+        <span class="text-[10px] text-amber-400">Requires Manual Action</span>
+      </div>
+      <div class="glass-3d p-4 rounded-2xl border border-purple-500/30">
+        <span class="text-xs text-slate-400 font-bold block">Pending Payouts</span>
+        <div class="text-2xl font-hud font-black text-pink-400 mt-1" id="statPendingWithdrawals">0</div>
+        <span class="text-[10px] text-pink-400">Withdrawal queue</span>
+      </div>
+      <div class="glass-3d p-4 rounded-2xl border border-purple-500/30">
+        <span class="text-xs text-slate-400 font-bold block">Approved Deposits</span>
+        <div class="text-2xl font-hud font-black text-emerald-400 mt-1" id="statTotalDeposited">₹0</div>
+        <span class="text-[10px] text-emerald-400">Total credited</span>
+      </div>
+      <div class="glass-3d p-4 rounded-2xl border border-purple-500/30">
+        <span class="text-xs text-slate-400 font-bold block">Active UPI Target</span>
+        <div class="text-xs font-hud font-bold text-cyan-300 truncate mt-2" id="statActiveUpi">aethernoir01@okaxis</div>
+        <span class="text-[10px] text-slate-400">Merchant Receiver</span>
+      </div>
+    </div>
+
+    <!-- Admin Section Tabs -->
+    <div class="flex flex-wrap gap-2 border-b border-slate-800 pb-2">
+      <button onclick="switchAdminSubView('deposits')" id="adminNavDeposits" class="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs shadow active:scale-95">
+        <i class="fa-solid fa-arrow-down mr-1.5"></i> Deposits (<span id="adminPendingDepCount">0</span>)
+      </button>
+      <button onclick="switchAdminSubView('withdrawals')" id="adminNavWithdrawals" class="px-4 py-2 rounded-xl bg-slate-900 text-slate-300 font-bold text-xs hover:bg-slate-800 active:scale-95">
+        <i class="fa-solid fa-arrow-up mr-1.5"></i> Withdrawals (<span id="adminPendingWithCount">0</span>)
+      </button>
+      <button onclick="switchAdminSubView('users')" id="adminNavUsers" class="px-4 py-2 rounded-xl bg-slate-900 text-slate-300 font-bold text-xs hover:bg-slate-800 active:scale-95">
+        <i class="fa-solid fa-users mr-1.5"></i> Player Balance Adjuster
+      </button>
+      <button onclick="switchAdminSubView('settings')" id="adminNavSettings" class="px-4 py-2 rounded-xl bg-slate-900 text-slate-300 font-bold text-xs hover:bg-slate-800 active:scale-95">
+        <i class="fa-solid fa-sliders mr-1.5"></i> Gateway & Broadcast
+      </button>
+    </div>
+
+    <!-- 1. DEPOSIT APPROVAL QUEUE -->
+    <div id="adminSub-deposits" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold font-hud text-white flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> UPI Deposit Requests
+        </h3>
+        <span class="text-xs text-slate-400">Realtime Updates from Firebase</span>
+      </div>
+
+      <div id="adminDepositQueueContainer" class="space-y-2.5">
+        <!-- Rendered dynamically -->
+        <p class="text-xs text-slate-400 text-center py-6">No deposit requests submitted yet.</p>
+      </div>
+    </div>
+
+    <!-- 2. WITHDRAWAL APPROVAL QUEUE -->
+    <div id="adminSub-withdrawals" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold font-hud text-white flex items-center gap-2">
+          <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i> Payout Requests
+        </h3>
+        <span class="text-xs text-slate-400">Review destination UPI / Bank</span>
+      </div>
+
+      <div id="adminWithdrawalQueueContainer" class="space-y-2.5">
+        <!-- Rendered dynamically -->
+        <p class="text-xs text-slate-400 text-center py-6">No withdrawal requests in queue.</p>
+      </div>
+    </div>
+
+    <!-- 3. USER MANAGEMENT & BALANCE ADJUSTER -->
+    <div id="adminSub-users" class="hidden space-y-4">
+      <div class="glass-3d p-5 rounded-3xl border border-purple-500/40 space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-purple-400"></i> Manual User Balance Adjustment
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="text-[11px] text-slate-400 font-semibold mb-1 block">Player Identifier (TG ID):</label>
+            <input type="text" id="adminAdjustUserId" value="TG-8865941" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400 font-semibold mb-1 block">Amount (₹):</label>
+            <input type="number" id="adminAdjustAmount" placeholder="Amount (e.g. 500)" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-xs text-white">
+          </div>
+          <div>
+            <label class="text-[11px] text-slate-400 font-semibold mb-1 block">Remark / Reason:</label>
+            <input type="text" id="adminAdjustRemark" placeholder="Admin bonus / correction" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-xs text-white">
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="adminAdjustUserBalance('ADD')" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs rounded-xl shadow active:scale-95">
+            <i class="fa-solid fa-plus mr-1"></i> Add Cash To Wallet
+          </button>
+          <button onclick="adminAdjustUserBalance('DEDUCT')" class="flex-1 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white font-black text-xs rounded-xl shadow active:scale-95">
+            <i class="fa-solid fa-minus mr-1"></i> Deduct Cash
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. GATEWAY & BROADCAST SETTINGS -->
+    <div id="adminSub-settings" class="hidden space-y-4">
+      <div class="glass-3d p-5 rounded-3xl border border-purple-500/40 space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-gear text-cyan-400"></i> Gateway & Broadcast Customizer
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- UPI Customizer -->
+          <div class="space-y-2">
+            <label class="text-[11px] text-slate-400 font-semibold block">Merchant Deposit UPI ID:</label>
+            <div class="flex gap-2">
+              <input type="text" id="adminSettingUpiInput" value="aethernoir01@okaxis" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-xs text-white">
+              <button onclick="saveAdminUpiId()" class="px-4 py-2 bg-purple-600 text-white font-bold text-xs rounded-xl active:scale-95">Save</button>
+            </div>
+            <p class="text-[10px] text-slate-400">Changes the QR and UPI ID across all players instantly.</p>
+          </div>
+
+          <!-- Broadcast Announcement -->
+          <div class="space-y-2">
+            <label class="text-[11px] text-slate-400 font-semibold block">Broadcast Announcement Message:</label>
+            <div class="flex gap-2">
+              <input type="text" id="adminBroadcastInput" placeholder="Announcement banner text..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-xs text-white">
+              <button onclick="postAdminBroadcast()" class="px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs rounded-xl active:scale-95">Broadcast</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- 3. FIREBASE SDK IMPORTS (ES MODULES)                           -->
+  <!-- ============================================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getDatabase, ref, set, get, update, onValue, push, child, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+    // User's Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAqtSs5ikgKYLg_36YnZLm6MtSzOWLXewU",
+      authDomain: "gogo-win-8d43b.firebaseapp.com",
+      databaseURL: "https://gogo-win-8d43b-default-rtdb.firebaseio.com",
+      projectId: "gogo-win-8d43b",
+      storageBucket: "gogo-win-8d43b.firebasestorage.app",
+      messagingSenderId: "1017550031199",
+      appId: "1:1017550031199:web:b96d847ab218c124430eea"
+    };
+
+    // Initialize Firebase & Realtime DB
+    let app, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getDatabase(app);
+      console.log("Firebase Realtime Database initialized!");
+    } catch (err) {
+      console.error("Firebase init failed:", err);
+    }
+
+    // Attach instances to window for global logic accessibility
+    window._firebaseApp = app;
+    window._firebaseDb = db;
+    window._fbMethods = { ref, set, get, update, onValue, push, child, serverTimestamp };
+
+    // Initialize Realtime Listeners for App State & Admin sync
+    window.initFirebaseRealtimeSync();
+  </script>
+
+  <!-- ============================================================== -->
+  <!-- 4. CORE ENGINE & HYBRID BUSINESS LOGIC                         -->
+  <!-- ============================================================== -->
+  <script>
+    /* SYNTHESIZED SOUND SYSTEM */
+    let audioCtx = null;
+    let soundEnabled = true;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('soundToggleBtn');
+      if (soundEnabled) {
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+        showToast('Sound Enabled', 'info');
+        playSynthSound('click');
+      } else {
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-slate-500"></i>';
+        showToast('Sound Muted', 'info');
+      }
+    }
+
+    function playSynthSound(type) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        } else if (type === 'coin') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(987.77, now);
+          osc.frequency.setValueAtTime(1318.51, now + 0.08);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'crash') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.exponentialRampToValueAtTime(30, now + 0.45);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        } else if (type === 'slice') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(700, now);
+          osc.frequency.exponentialRampToValueAtTime(1500, now + 0.08);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'win') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(freq, now + idx * 0.08);
+            g.gain.setValueAtTime(0.2, now + idx * 0.08);
+            g.gain.linearRampToValueAtTime(0.01, now + (idx + 1) * 0.12);
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.start(now + idx * 0.08);
+            o.stop(now + (idx + 1) * 0.12);
+          });
+        }
+      } catch (e) {}
+    }
+
+    /* GLOBAL APPLICATION STATE */
+    let CURRENT_MERCHANT_UPI = 'aethernoir01@okaxis';
+
+    const AppState = {
+      user: {
+        id: 'TG-8865941',
+        name: 'Alex Gamer',
+        refCode: 'REF' + Math.floor(1000 + Math.random() * 9000)
+      },
+      wallet: {
+        available_balance_paise: 0,
+        reserved_balance_paise: 0
+      },
+      ledger: [],
+      activeGame: null,
+      isAdminView: false
+    };
+
+    /* FIREBASE REALTIME DB SYNC */
+    window.initFirebaseRealtimeSync = function() {
+      if (!window._firebaseDb) return;
+      const db = window._firebaseDb;
+      const { ref, onValue, set, get } = window._fbMethods;
+
+      // 1. Sync User Balance in Realtime
+      const userBalRef = ref(db, `users/${AppState.user.id}`);
+      onValue(userBalRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          if (data.available_balance_paise !== undefined) {
+            AppState.wallet.available_balance_paise = data.available_balance_paise;
+          }
+          if (data.reserved_balance_paise !== undefined) {
+            AppState.wallet.reserved_balance_paise = data.reserved_balance_paise;
+          }
+          syncBalanceDisplays();
+        } else {
+          // Initialize in DB if empty
+          set(userBalRef, {
+            name: AppState.user.name,
+            available_balance_paise: 0,
+            reserved_balance_paise: 0,
+            createdAt: Date.now()
+          });
+        }
+      });
+
+      // 2. Sync Global Config (Merchant UPI & Broadcast)
+      const configRef = ref(db, 'system_config');
+      onValue(configRef, (snapshot) => {
+        const config = snapshot.val();
+        if (config) {
+          if (config.activeUpi) {
+            CURRENT_MERCHANT_UPI = config.activeUpi;
+            updateUpiDisplayEverywhere(config.activeUpi);
+          }
+          if (config.broadcastMessage) {
+            const bBanner = document.getElementById('broadcastBanner');
+            const bText = document.getElementById('broadcastText');
+            if (bBanner && bText) {
+              bText.textContent = config.broadcastMessage;
+              bBanner.classList.remove('hidden');
+            }
+          }
+        }
+      });
+
+      // 3. Realtime Listener for Admin - Deposits Queue
+      const depRef = ref(db, 'deposits');
+      onValue(depRef, (snapshot) => {
+        const val = snapshot.val() || {};
+        renderAdminDeposits(val);
+      });
+
+      // 4. Realtime Listener for Admin - Withdrawals Queue
+      const withRef = ref(db, 'withdrawals');
+      onValue(withRef, (snapshot) => {
+        const val = snapshot.val() || {};
+        renderAdminWithdrawals(val);
+      });
+
+      // 5. User Ledger Listener
+      const ledgerRef = ref(db, `ledgers/${AppState.user.id}`);
+      onValue(ledgerRef, (snapshot) => {
+        const entries = snapshot.val() || {};
+        AppState.ledger = Object.values(entries).sort((a,b) => b.timestamp - a.timestamp);
+        renderLedger();
+      });
+    };
+
+    function updateUpiDisplayEverywhere(upi) {
+      ['standeeUpiText', 'copyBoxUpiText', 'bannerUpiDisplay', 'depositTargetUpiText', 'intentModalUpiDisplay', 'statActiveUpi'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = upi;
+      });
+      const settingInput = document.getElementById('adminSettingUpiInput');
+      if (settingInput) settingInput.value = upi;
+      updateDynamicQr(100);
+    }
+
+    function syncBalanceDisplays() {
+      const rupees = (AppState.wallet.available_balance_paise / 100).toFixed(2);
+      const reservedRupees = (AppState.wallet.reserved_balance_paise / 100).toFixed(2);
+
+      const hBal = document.getElementById('headerBalance');
+      const mBal = document.getElementById('mainWalletBalance');
+      const aText = document.getElementById('availablePaiseText');
+      const rText = document.getElementById('reservedPaiseText');
+      const wBal = document.getElementById('withdrawAvailableBalance');
+
+      if (hBal) hBal.textContent = rupees;
+      if (mBal) mBal.textContent = rupees;
+      if (aText) aText.textContent = '₹' + rupees;
+      if (rText) rText.textContent = '₹' + reservedRupees;
+      if (wBal) wBal.textContent = '₹' + rupees;
+    }
+
+    function writeFirebaseLedger(type, paise, refNum, status = 'SUCCESS') {
+      if (!window._firebaseDb) return;
+      const { ref, push } = window._fbMethods;
+      const ledgerListRef = ref(window._firebaseDb, `ledgers/${AppState.user.id}`);
+      push(ledgerListRef, {
+        id: 'TXN-' + Math.floor(100000 + Math.random() * 900000),
+        type,
+        amount_paise: paise,
+        ref: refNum,
+        status,
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now()
+      });
+    }
+
+    /* DEPOSIT WORKFLOW WITH STRICT ADMIN APPROVAL */
+    let selectedDepositAmount = 100;
+
+    window.setDepositAmount = function(amt) {
+      try { playSynthSound('click'); } catch (e) {}
+      selectedDepositAmount = amt;
+      const input = document.getElementById('customDepositInput');
+      if (input) input.value = amt;
+
+      document.querySelectorAll('.deposit-preset-btn').forEach(b => {
+        b.classList.remove('bg-purple-700', 'border-purple-400');
+        b.classList.add('bg-slate-900', 'border-slate-700');
+      });
+      if (window.event && window.event.target) {
+        window.event.target.classList.add('bg-purple-700', 'border-purple-400');
+        window.event.target.classList.remove('bg-slate-900', 'border-slate-700');
+      }
+      updateDynamicQr(amt);
+    };
+
+    window.onCustomAmountChange = function(val) {
+      const parsed = parseFloat(val);
+      if (!isNaN(parsed) && parsed >= 100) {
+        selectedDepositAmount = parsed;
+        updateDynamicQr(parsed);
+      }
+    };
+
+    function updateDynamicQr(amt) {
+      const qrImg = document.getElementById('phonepeQrImg');
+      const formatted = Number(amt).toFixed(2);
+      if (qrImg) {
+        const upiData = encodeURIComponent(`upi://pay?pa=${CURRENT_MERCHANT_UPI}&am=${formatted}&cu=INR&tn=Deposit_${AppState.user.id}`);
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${upiData}`;
+      }
+    }
+
+    window.triggerPhonePeAppIntent = function() {
+      const inputEl = document.getElementById('customDepositInput');
+      const amt = parseFloat(inputEl ? inputEl.value : selectedDepositAmount) || selectedDepositAmount;
+      if (amt < 100) {
+        showToast('Minimum deposit amount is ₹100!', 'error');
+        return;
+      }
+      try { playSynthSound('coin'); } catch (e) {}
+
+      const formatted = Number(amt).toFixed(2);
+      const upiUrl = `upi://pay?pa=${CURRENT_MERCHANT_UPI}&am=${formatted}&cu=INR&tn=Deposit_${AppState.user.id}`;
+      updateDynamicQr(amt);
+
+      const modalLink = document.getElementById('modalDirectPayLink');
+      if (modalLink) modalLink.href = upiUrl;
+
+      try {
+        const dummyLink = document.createElement('a');
+        dummyLink.href = upiUrl;
+        dummyLink.target = '_top';
+        dummyLink.rel = 'noopener noreferrer';
+        document.body.appendChild(dummyLink);
+        dummyLink.click();
+        document.body.removeChild(dummyLink);
+      } catch (err) {}
+
+      setTimeout(() => {
+        const modal = document.getElementById('upiIntentModal');
+        if (modal) modal.classList.remove('hidden');
+      }, 350);
+
+      showToast(`Opening UPI App for ₹${formatted}...`, 'info');
+    };
+
+    window.closeIntentModalAndShowQR = function() {
+      const modal = document.getElementById('upiIntentModal');
+      if (modal) modal.classList.add('hidden');
+      window.showQRCodePayment();
+    };
+
+    window.showQRCodePayment = function() {
+      try { playSynthSound('click'); } catch (e) {}
+      const qrSec = document.getElementById('dynamicQrSection');
+      if (qrSec) qrSec.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Submits request to Firebase Realtime DB without crediting immediately
+    window.submitDepositForAdminVerification = function() {
+      const utrEl = document.getElementById('depositUtrInput');
+      const utr = utrEl ? utrEl.value.trim() : '';
+      const inputEl = document.getElementById('customDepositInput');
+      const amt = parseFloat(inputEl ? inputEl.value : 100) || 100;
+
+      if (amt < 100) {
+        showToast('Minimum deposit amount is ₹100', 'error');
+        return;
+      }
+      if (utr.length < 8) {
+        showToast('Enter valid 12-digit UPI UTR / Ref Number', 'error');
+        return;
+      }
+
+      if (!window._firebaseDb) {
+        showToast('Database connection error', 'error');
+        return;
+      }
+
+      const { ref, push } = window._fbMethods;
+      const depositRef = ref(window._firebaseDb, 'deposits');
+
+      const newDeposit = {
+        userId: AppState.user.id,
+        userName: AppState.user.name,
+        amount: amt,
+        amount_paise: Math.round(amt * 100),
+        utr: utr,
+        targetUpi: CURRENT_MERCHANT_UPI,
+        status: 'PENDING',
+        timestamp: Date.now(),
+        dateStr: new Date().toLocaleString()
+      };
+
+      push(depositRef, newDeposit).then(() => {
+        writeFirebaseLedger('deposit_pending', Math.round(amt * 100), `UTR-${utr}`, 'PENDING_APPROVAL');
+        showToast('Deposit submitted! Awaiting Admin Verification.', 'info');
+        if (utrEl) utrEl.value = '';
+        try { playSynthSound('coin'); } catch (e) {}
+      }).catch(err => {
+        showToast('Failed to submit: ' + err.message, 'error');
+      });
+    };
+
+    window.copyUpiId = function() {
+      const tempInput = document.createElement('input');
+      tempInput.value = CURRENT_MERCHANT_UPI;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      try { playSynthSound('click'); } catch (e) {}
+      showToast(`Copied UPI ID: ${CURRENT_MERCHANT_UPI}`, 'success');
+    };
+
+    /* WITHDRAWAL WORKFLOW (QUEUED FOR ADMIN) */
+    let currentPayoutMethod = 'upi';
+    window.selectWithdrawMethod = function(method) {
+      try { playSynthSound('click'); } catch (e) {}
+      currentPayoutMethod = method;
+      const upiBtn = document.getElementById('payoutMethodUpiBtn');
+      const bankBtn = document.getElementById('payoutMethodBankBtn');
+      const upiBox = document.getElementById('upiPayoutInputBox');
+      const bankBox = document.getElementById('bankPayoutInputBox');
+
+      if (method === 'upi') {
+        if (upiBtn) upiBtn.className = "py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs border border-purple-400 shadow";
+        if (bankBtn) bankBtn.className = "py-2.5 rounded-xl bg-slate-900 text-slate-300 font-bold text-xs border border-slate-700";
+        if (upiBox) upiBox.classList.remove('hidden');
+        if (bankBox) bankBox.classList.add('hidden');
+      } else {
+        if (bankBtn) bankBtn.className = "py-2.5 rounded-xl bg-purple-600 text-white font-bold text-xs border border-purple-400 shadow";
+        if (upiBtn) upiBtn.className = "py-2.5 rounded-xl bg-slate-900 text-slate-300 font-bold text-xs border border-slate-700";
+        if (bankBox) bankBox.classList.remove('hidden');
+        if (upiBox) upiBox.classList.add('hidden');
+      }
+    };
+
+    window.submitWithdrawalRequest = function() {
+      const inputEl = document.getElementById('withdrawAmountInput');
+      const amt = parseFloat(inputEl ? inputEl.value : 0);
+      const reqPaise = Math.round(amt * 100);
+
+      if (isNaN(amt) || amt < 100) {
+        showToast('Minimum payout amount is ₹100', 'error');
+        return;
+      }
+      if (AppState.wallet.available_balance_paise < reqPaise) {
+        showToast('Insufficient wallet balance!', 'error');
+        return;
+      }
+
+      let dest = '';
+      if (currentPayoutMethod === 'upi') {
+        const el = document.getElementById('withdrawUpiId');
+        dest = el ? el.value.trim() : '';
+        if (!dest) {
+          showToast('Provide your UPI ID', 'error');
+          return;
+        }
+      } else {
+        const acc = (document.getElementById('withdrawBankAcc')?.value || '').trim();
+        const ifsc = (document.getElementById('withdrawBankIfsc')?.value || '').trim();
+        if (!acc || !ifsc) {
+          showToast('Provide Account No and IFSC', 'error');
+          return;
+        }
+        dest = `A/C:${acc} (${ifsc})`;
+      }
+
+      if (!window._firebaseDb) return;
+      const { ref, update, push } = window._fbMethods;
+
+      // Atomically reserve balance in user's profile
+      const newAvail = AppState.wallet.available_balance_paise - reqPaise;
+      const newRes = AppState.wallet.reserved_balance_paise + reqPaise;
+
+      update(ref(window._firebaseDb, `users/${AppState.user.id}`), {
+        available_balance_paise: newAvail,
+        reserved_balance_paise: newRes
+      }).then(() => {
+        // Create withdrawal queue entry
+        const withRef = ref(window._firebaseDb, 'withdrawals');
+        push(withRef, {
+          userId: AppState.user.id,
+          userName: AppState.user.name,
+          amount: amt,
+          amount_paise: reqPaise,
+          method: currentPayoutMethod,
+          destination: dest,
+          status: 'PENDING',
+          timestamp: Date.now(),
+          dateStr: new Date().toLocaleString()
+        });
+
+        writeFirebaseLedger('withdrawal_pending', -reqPaise, `To-${dest}`, 'PENDING_APPROVAL');
+        showToast(`Withdrawal of ₹${amt} requested! Awaiting admin transfer.`, 'info');
+        if (inputEl) inputEl.value = '';
+      });
+    };
+
+    /* LEDGER RENDER */
+    function renderLedger() {
+      const container = document.getElementById('ledgerEntriesContainer');
+      if (!container) return;
+
+      if (!AppState.ledger || AppState.ledger.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No transactions recorded yet.</p>';
+        return;
+      }
+
+      container.innerHTML = AppState.ledger.map(entry => {
+        const isPositive = entry.amount_paise >= 0;
+        const formattedAmount = (Math.abs(entry.amount_paise) / 100).toFixed(2);
+        const color = isPositive ? 'text-emerald-400' : 'text-red-400';
+        const sign = isPositive ? '+' : '-';
+        const icon = entry.type.includes('deposit') ? 'fa-arrow-down' : 
+                     entry.type.includes('withdrawal') ? 'fa-arrow-up' :
+                     entry.type === 'bet_win' ? 'fa-trophy' : 'fa-gamepad';
+
+        return `
+          <div class="glass-3d p-3 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
+            <div class="flex items-center space-x-3">
+              <div class="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300">
+                <i class="fa-solid ${icon}"></i>
+              </div>
+              <div>
+                <div class="font-bold text-white capitalize font-hud">${entry.type.replace('_', ' ')}</div>
+                <div class="text-[10px] text-slate-400 font-mono">${entry.ref || ''} • ${entry.date || ''}</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-black font-hud ${color}">${sign}₹${formattedAmount}</span>
+              <div class="text-[9px] ${entry.status === 'PENDING_APPROVAL' ? 'text-amber-400' : 'text-slate-400'} font-bold">${entry.status}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* ============================================================== */
+    /* ADMIN PANEL ACTIONS & LOGIC                                    */
+    /* ============================================================== */
+
+    window.toggleAdminPrompt = function() {
+      if (AppState.isAdminView) {
+        exitAdminView();
+      } else {
+        const modal = document.getElementById('adminPinModal');
+        const pinIn = document.getElementById('adminPinInput');
+        if (pinIn) pinIn.value = '';
+        if (modal) modal.classList.remove('hidden');
+      }
+    };
+
+    window.closeAdminPinModal = function() {
+      const modal = document.getElementById('adminPinModal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.verifyAdminPin = function() {
+      const pin = document.getElementById('adminPinInput')?.value.trim();
+      if (pin === '7860' || pin === '1234') {
+        closeAdminPinModal();
+        enterAdminView();
+      } else {
+        showToast('Invalid Security PIN! (Use 7860)', 'error');
+      }
+    };
+
+    function enterAdminView() {
+      AppState.isAdminView = true;
+      document.getElementById('userAppView')?.classList.add('hidden');
+      document.getElementById('adminPanelView')?.classList.remove('hidden');
+      document.getElementById('mainBody')?.classList.remove('user-mode-pad');
+      document.getElementById('roleBadge').innerHTML = '<i class="fa-solid fa-gamepad"></i> Player View';
+      try { playSynthSound('click'); } catch (e) {}
+    }
+
+    window.exitAdminView = function() {
+      AppState.isAdminView = false;
+      document.getElementById('adminPanelView')?.classList.add('hidden');
+      document.getElementById('userAppView')?.classList.remove('hidden');
+      document.getElementById('mainBody')?.classList.add('user-mode-pad');
+      document.getElementById('roleBadge').innerHTML = '<i class="fa-solid fa-shield-halved"></i> Admin Panel';
+      try { playSynthSound('click'); } catch (e) {}
+    };
+
+    window.switchAdminSubView = function(view) {
+      ['deposits', 'withdrawals', 'users', 'settings'].forEach(v => {
+        const sub = document.getElementById(`adminSub-${v}`);
+        const nav = document.getElementById(`adminNav${v.charAt(0).toUpperCase() + v.slice(1)}`);
+        if (sub) {
+          if (v === view) sub.classList.remove('hidden');
+          else sub.classList.add('hidden');
+        }
+        if (nav) {
+          if (v === view) {
+            nav.className = "px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs shadow active:scale-95";
+          } else {
+            nav.className = "px-4 py-2 rounded-xl bg-slate-900 text-slate-300 font-bold text-xs hover:bg-slate-800 active:scale-95";
+          }
+        }
+      });
+    };
+
+    // Render deposits queue in Admin
+    function renderAdminDeposits(depositsObj) {
+      const container = document.getElementById('adminDepositQueueContainer');
+      const countEl = document.getElementById('adminPendingDepCount');
+      const statPendingEl = document.getElementById('statPendingDeposits');
+      const statTotalEl = document.getElementById('statTotalDeposited');
+      if (!container) return;
+
+      const keys = Object.keys(depositsObj);
+      const items = keys.map(k => ({ key: k, ...depositsObj[k] })).sort((a,b) => b.timestamp - a.timestamp);
+      
+      const pendingItems = items.filter(i => i.status === 'PENDING');
+      if (countEl) countEl.textContent = pendingItems.length;
+      if (statPendingEl) statPendingEl.textContent = pendingItems.length;
+
+      let approvedTotal = 0;
+      items.filter(i => i.status === 'APPROVED').forEach(i => approvedTotal += (i.amount || 0));
+      if (statTotalEl) statTotalEl.textContent = '₹' + approvedTotal;
+
+      if (items.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">No deposit requests recorded.</p>';
+        return;
+      }
+
+      container.innerHTML = items.map(d => {
+        const isPending = d.status === 'PENDING';
+        return `
+          <div class="glass-3d p-3.5 rounded-2xl border ${isPending ? 'border-amber-500/50 bg-[#1e1526]/80' : 'border-slate-800'} flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-hud font-bold text-white text-sm">₹${d.amount}</span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${isPending ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : d.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-red-500/20 text-red-400'}">
+                  ${d.status}
+                </span>
+                <span class="text-slate-400 font-mono text-[10px]">${d.dateStr || ''}</span>
+              </div>
+              <div class="text-[11px] text-slate-300">
+                Player: <span class="text-purple-300 font-bold">${d.userName} (${d.userId})</span>
+              </div>
+              <div class="text-[11px] text-amber-200 font-mono">
+                UTR: <strong>${d.utr}</strong> • Payee: ${d.targetUpi || 'aethernoir01@okaxis'}
+              </div>
+            </div>
+
+            ${isPending ? `
+              <div class="flex items-center gap-2">
+                <button onclick="adminApproveDeposit('${d.key}', '${d.userId}', ${d.amount_paise || (d.amount*100)}, '${d.utr}')" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black rounded-xl text-xs shadow active:scale-95 flex items-center gap-1">
+                  <i class="fa-solid fa-check"></i> Approve & Credit
+                </button>
+                <button onclick="adminRejectDeposit('${d.key}', '${d.userId}', '${d.utr}')" class="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white font-bold rounded-xl text-xs active:scale-95">
+                  <i class="fa-solid fa-xmark"></i> Reject
+                </button>
+              </div>
+            ` : `
+              <div class="text-slate-400 text-[11px] italic">Action Settled</div>
+            `}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Approve Deposit Action in Admin
+    window.adminApproveDeposit = function(depositKey, userId, amountPaise, utr) {
+      if (!window._firebaseDb) return;
+      const { ref, get, update, push } = window._fbMethods;
+
+      // 1. Mark deposit as APPROVED
+      update(ref(window._firebaseDb, `deposits/${depositKey}`), {
+        status: 'APPROVED',
+        approvedAt: Date.now()
+      });
+
+      // 2. Fetch and Credit User's Balance atomically
+      const userRef = ref(window._firebaseDb, `users/${userId}`);
+      get(userRef).then(snap => {
+        const u = snap.val() || { available_balance_paise: 0, reserved_balance_paise: 0 };
+        const newBal = (u.available_balance_paise || 0) + amountPaise;
+
+        update(userRef, {
+          available_balance_paise: newBal
+        });
+
+        // 3. Write Approved record in user's ledger
+        const ledgerRef = ref(window._firebaseDb, `ledgers/${userId}`);
+        push(ledgerRef, {
+          id: 'TXN-' + Math.floor(100000 + Math.random() * 900000),
+          type: 'deposit',
+          amount_paise: amountPaise,
+          ref: `UTR-${utr}`,
+          status: 'SUCCESS',
+          date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        });
+
+        showToast(`Deposit approved! ₹${amountPaise/100} credited to ${userId}`, 'success');
+        try { playSynthSound('coin'); } catch (e) {}
+      });
+    };
+
+    window.adminRejectDeposit = function(depositKey, userId, utr) {
+      if (!window._firebaseDb) return;
+      const { ref, update, push } = window._fbMethods;
+      update(ref(window._firebaseDb, `deposits/${depositKey}`), {
+        status: 'REJECTED',
+        rejectedAt: Date.now()
+      });
+      const ledgerRef = ref(window._firebaseDb, `ledgers/${userId}`);
+      push(ledgerRef, {
+        id: 'TXN-' + Math.floor(100000 + Math.random() * 900000),
+        type: 'deposit_rejected',
+        amount_paise: 0,
+        ref: `UTR-${utr}`,
+        status: 'REJECTED',
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now()
+      });
+      showToast('Deposit marked as REJECTED', 'error');
+    };
+
+    // Render Withdrawals queue in Admin
+    function renderAdminWithdrawals(withObj) {
+      const container = document.getElementById('adminWithdrawalQueueContainer');
+      const countEl = document.getElementById('adminPendingWithCount');
+      const statEl = document.getElementById('statPendingWithdrawals');
+      if (!container) return;
+
+      const keys = Object.keys(withObj);
+      const items = keys.map(k => ({ key: k, ...withObj[k] })).sort((a,b) => b.timestamp - a.timestamp);
+      
+      const pendingItems = items.filter(i => i.status === 'PENDING');
+      if (countEl) countEl.textContent = pendingItems.length;
+      if (statEl) statEl.textContent = pendingItems.length;
+
+      if (items.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400 text-center py-6">No withdrawal requests recorded.</p>';
+        return;
+      }
+
+      container.innerHTML = items.map(w => {
+        const isPending = w.status === 'PENDING';
+        return `
+          <div class="glass-3d p-3.5 rounded-2xl border ${isPending ? 'border-pink-500/50 bg-[#251021]/80' : 'border-slate-800'} flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="font-hud font-bold text-white text-sm">₹${w.amount}</span>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${isPending ? 'bg-pink-500/20 text-pink-300 border border-pink-500/40' : w.status === 'PAID' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-red-500/20 text-red-400'}">
+                  ${w.status}
+                </span>
+                <span class="text-slate-400 font-mono text-[10px]">${w.dateStr || ''}</span>
+              </div>
+              <div class="text-[11px] text-slate-300">
+                Player: <span class="text-purple-300 font-bold">${w.userName} (${w.userId})</span>
+              </div>
+              <div class="text-[11px] text-cyan-300 font-mono">
+                Send to: <strong>${w.destination}</strong> (${w.method.toUpperCase()})
+              </div>
+            </div>
+
+            ${isPending ? `
+              <div class="flex items-center gap-2">
+                <button onclick="adminApproveWithdrawal('${w.key}', '${w.userId}', ${w.amount_paise || (w.amount*100)}, '${w.destination}')" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black rounded-xl text-xs shadow active:scale-95 flex items-center gap-1">
+                  <i class="fa-solid fa-check"></i> Mark Paid & Clear
+                </button>
+                <button onclick="adminRejectWithdrawal('${w.key}', '${w.userId}', ${w.amount_paise || (w.amount*100)}, '${w.destination}')" class="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white font-bold rounded-xl text-xs active:scale-95">
+                  <i class="fa-solid fa-rotate-left"></i> Reject & Refund
+                </button>
+              </div>
+            ` : `
+              <div class="text-slate-400 text-[11px] italic">Settled</div>
+            `}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Approve & Settle Withdrawal in Admin
+    window.adminApproveWithdrawal = function(withKey, userId, reqPaise, destination) {
+      if (!window._firebaseDb) return;
+      const { ref, get, update, push } = window._fbMethods;
+
+      // Mark PAID in withdrawals queue
+      update(ref(window._firebaseDb, `withdrawals/${withKey}`), {
+        status: 'PAID',
+        paidAt: Date.now()
+      });
+
+      // Clear from user reserved balance
+      const userRef = ref(window._firebaseDb, `users/${userId}`);
+      get(userRef).then(snap => {
+        const u = snap.val() || { reserved_balance_paise: 0 };
+        const newReserved = Math.max(0, (u.reserved_balance_paise || 0) - reqPaise);
+        update(userRef, { reserved_balance_paise: newReserved });
+
+        const ledgerRef = ref(window._firebaseDb, `ledgers/${userId}`);
+        push(ledgerRef, {
+          id: 'TXN-' + Math.floor(100000 + Math.random() * 900000),
+          type: 'withdrawal',
+          amount_paise: -reqPaise,
+          ref: `Payout-To-${destination}`,
+          status: 'SUCCESS_PAID',
+          date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        });
+
+        showToast(`Withdrawal of ₹${reqPaise/100} marked PAID!`, 'success');
+      });
+    };
+
+    // Reject & Refund Withdrawal in Admin
+    window.adminRejectWithdrawal = function(withKey, userId, reqPaise, destination) {
+      if (!window._firebaseDb) return;
+      const { ref, get, update, push } = window._fbMethods;
+
+      update(ref(window._firebaseDb, `withdrawals/${withKey}`), {
+        status: 'REJECTED_REFUNDED',
+        rejectedAt: Date.now()
+      });
+
+      // Refund reserved back into available
+      const userRef = ref(window._firebaseDb, `users/${userId}`);
+      get(userRef).then(snap => {
+        const u = snap.val() || { available_balance_paise: 0, reserved_balance_paise: 0 };
+        const newReserved = Math.max(0, (u.reserved_balance_paise || 0) - reqPaise);
+        const newAvail = (u.available_balance_paise || 0) + reqPaise;
+
+        update(userRef, {
+          available_balance_paise: newAvail,
+          reserved_balance_paise: newReserved
+        });
+
+        const ledgerRef = ref(window._firebaseDb, `ledgers/${userId}`);
+        push(ledgerRef, {
+          id: 'TXN-' + Math.floor(100000 + Math.random() * 900000),
+          type: 'refund',
+          amount_paise: reqPaise,
+          ref: `Refund-From-${destination}`,
+          status: 'REFUNDED',
+          date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        });
+
+        showToast(`Withdrawal rejected. ₹${reqPaise/100} refunded to ${userId}`, 'info');
+      });
+    };
+
+    // Admin Balance Adjuster
+    window.adminAdjustUserBalance = function(action) {
+      const uId = document.getElementById('adminAdjustUserId')?.value.trim();
+      const amt = parseFloat(document.getElementById('adminAdjustAmount')?.value || 0);
+      const remark = document.getElementById('adminAdjustRemark')?.value.trim() || 'Admin adjustment';
+
+      if (!uId || isNaN(amt) || amt <= 0) {
+        showToast('Enter valid Player ID and Amount', 'error');
+        return;
+      }
+      if (!window._firebaseDb) return;
+      const { ref, get, update, push } = window._fbMethods;
+
+      const userRef = ref(window._firebaseDb, `users/${uId}`);
+      get(userRef).then(snap => {
+        const u = snap.val() || { available_balance_paise: 0 };
+        const amtPaise = Math.round(amt * 100);
+        let newBal = u.available_balance_paise || 0;
+
+        if (action === 'ADD') newBal += amtPaise;
+        else newBal = Math.max(0, newBal - amtPaise);
+
+        update(userRef, { available_balance_paise: newBal });
+
+        const ledgerRef = ref(window._firebaseDb, `ledgers/${uId}`);
+        push(ledgerRef, {
+          id: 'TXN-' + Math.floor(100000 + Math.random() * 900000),
+          type: action === 'ADD' ? 'admin_credit' : 'admin_debit',
+          amount_paise: action === 'ADD' ? amtPaise : -amtPaise,
+          ref: remark,
+          status: 'SETTLED',
+          date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        });
+
+        showToast(`${action === 'ADD' ? 'Added' : 'Deducted'} ₹${amt} for ${uId}`, 'success');
+      });
+    };
+
+    // Admin System Config: Save new UPI ID
+    window.saveAdminUpiId = function() {
+      const newUpi = document.getElementById('adminSettingUpiInput')?.value.trim();
+      if (!newUpi || !newUpi.includes('@')) {
+        showToast('Provide a valid UPI VPA (e.g. name@okaxis)', 'error');
+        return;
+      }
+      if (!window._firebaseDb) return;
+      const { ref, update } = window._fbMethods;
+      update(ref(window._firebaseDb, 'system_config'), { activeUpi: newUpi }).then(() => {
+        showToast(`Merchant UPI changed to: ${newUpi}`, 'success');
+      });
+    };
+
+    // Admin System Config: Post Broadcast Banner
+    window.postAdminBroadcast = function() {
+      const msg = document.getElementById('adminBroadcastInput')?.value.trim();
+      if (!msg) {
+        showToast('Enter announcement message', 'error');
+        return;
+      }
+      if (!window._firebaseDb) return;
+      const { ref, update } = window._fbMethods;
+      update(ref(window._firebaseDb, 'system_config'), { broadcastMessage: msg }).then(() => {
+        showToast('Broadcast published to all players!', 'success');
+      });
+    };
+
+    window.dismissBroadcast = function() {
+      const b = document.getElementById('broadcastBanner');
+      if (b) b.classList.add('hidden');
+    };
+
+    /* USER APP NAVIGATION & TABS */
+    window.switchTab = function(tabId) {
+      try { playSynthSound('click'); } catch (e) {}
+      ['home', 'games', 'wallet', 'referral', 'profile'].forEach(t => {
+        const view = document.getElementById(`tab-${t}`);
+        const nav = document.getElementById(`nav-${t}`);
+        if (view) {
+          if (t === tabId) view.classList.remove('hidden');
+          else view.classList.add('hidden');
+        }
+        if (nav) {
+          if (t === tabId) {
+            nav.classList.add('text-purple-400');
+            nav.classList.remove('text-slate-400');
+          } else {
+            nav.classList.remove('text-purple-400');
+            nav.classList.add('text-slate-400');
+          }
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.openDepositModal = function() {
+      window.switchTab('wallet');
+      window.switchWalletSubTab('deposit');
+    };
+
+    window.openWithdrawSubTab = function() {
+      window.switchTab('wallet');
+      window.switchWalletSubTab('withdraw');
+    };
+
+    window.switchWalletSubTab = function(sub) {
+      try { playSynthSound('click'); } catch (e) {}
+      ['deposit', 'withdraw', 'ledger'].forEach(s => {
+        const subView = document.getElementById(`subview-${s}`);
+        const btn = document.getElementById(`walletTabBtn${s.charAt(0).toUpperCase() + s.slice(1)}`);
+        if (subView) {
+          if (s === sub) subView.classList.remove('hidden');
+          else subView.classList.add('hidden');
+        }
+        if (btn) {
+          if (s === sub) {
+            btn.classList.add('bg-purple-600', 'text-white');
+            btn.classList.remove('text-slate-400');
+          } else {
+            btn.classList.remove('bg-purple-600', 'text-white');
+            btn.classList.add('text-slate-400');
+          }
+        }
+      });
+    };
+
+    window.openTermsModal = function() {
+      try { playSynthSound('click'); } catch (e) {}
+      const modal = document.getElementById('termsModal');
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    window.closeTermsModal = function() {
+      try { playSynthSound('click'); } catch (e) {}
+      const modal = document.getElementById('termsModal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    /* AVIATOR CRASH ENGINE */
+    let aviatorState = {
+      status: 'idle',
+      multiplier: 1.00,
+      crashPoint: 2.10,
+      betPlaced: false,
+      cashedOut: false,
+      betAmount: 20,
+      animId: null,
+      startTime: 0,
+      particles: []
+    };
+
+    const aviatorCanvas = document.getElementById('aviatorCanvas');
+    const aCtx = aviatorCanvas ? aviatorCanvas.getContext('2d') : null;
+
+    function resizeCanvas(canvas) {
+      if (!canvas || !canvas.parentElement) return;
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+
+    function initAviator() {
+      if (aviatorCanvas) resizeCanvas(aviatorCanvas);
+      generateInitialFakeBets();
+      startAviatorRoundCycle();
+    }
+
+    function startAviatorRoundCycle() {
+      if (AppState.activeGame !== 'aviator') return;
+
+      aviatorState.status = 'waiting';
+      aviatorState.multiplier = 1.00;
+      aviatorState.cashedOut = false;
+      aviatorState.particles = [];
+      
+      const rand = Math.random();
+      if (rand < 0.15) aviatorState.crashPoint = (1.05 + Math.random() * 0.35).toFixed(2);
+      else if (rand < 0.70) aviatorState.crashPoint = (1.40 + Math.random() * 2.2).toFixed(2);
+      else aviatorState.crashPoint = (3.60 + Math.random() * 7.5).toFixed(2);
+
+      const multText = document.getElementById('aviatorMultiplierText');
+      const statText = document.getElementById('aviatorStatusText');
+      const onlineEl = document.getElementById('aviatorOnlineCount');
+      if (onlineEl) onlineEl.textContent = Math.floor(210 + Math.random() * 80);
+
+      generateInitialFakeBets();
+
+      if (multText) {
+        multText.textContent = '1.00x';
+        multText.className = 'text-5xl font-hud font-black text-white';
+      }
+      if (statText) statText.textContent = 'Next flight in 5s...';
+
+      const waitBar = document.getElementById('aviatorWaitBar');
+      if (waitBar) {
+        waitBar.style.width = '100%';
+        waitBar.style.transition = 'width 5s linear';
+      }
+
+      updateAviatorButtons();
+
+      setTimeout(() => {
+        if (AppState.activeGame !== 'aviator') return;
+        if (waitBar) {
+          waitBar.style.transition = 'none';
+          waitBar.style.width = '0%';
+        }
+        launchAviatorFlight();
+      }, 5000);
+    }
+
+    function launchAviatorFlight() {
+      aviatorState.status = 'running';
+      aviatorState.startTime = performance.now();
+      const statText = document.getElementById('aviatorStatusText');
+      if (statText) statText.textContent = '4D Jet in Flight!';
+      updateAviatorButtons();
+
+      function stepFlight(time) {
+        if (AppState.activeGame !== 'aviator' || aviatorState.status !== 'running') return;
+        const elapsedSec = (time - aviatorState.startTime) / 1000;
+        const currentMult = Math.max(1.00, Math.pow(Math.E, 0.085 * elapsedSec));
+        aviatorState.multiplier = parseFloat(currentMult.toFixed(2));
+
+        const multText = document.getElementById('aviatorMultiplierText');
+        if (multText) multText.textContent = aviatorState.multiplier.toFixed(2) + 'x';
+
+        updateFakeBetsOnFlight(aviatorState.multiplier);
+
+        if (aviatorState.multiplier >= parseFloat(aviatorState.crashPoint)) {
+          triggerAviatorCrash();
+          return;
+        }
+
+        renderAviatorCanvas(elapsedSec);
+        aviatorState.animId = requestAnimationFrame(stepFlight);
+      }
+      aviatorState.animId = requestAnimationFrame(stepFlight);
+    }
+
+    function triggerAviatorCrash() {
+      aviatorState.status = 'crashed';
+      try { playSynthSound('crash'); } catch (e) {}
+      
+      const multText = document.getElementById('aviatorMultiplierText');
+      const statText = document.getElementById('aviatorStatusText');
+      if (multText) {
+        multText.textContent = 'CRASHED @ ' + aviatorState.crashPoint + 'x';
+        multText.className = 'text-3xl font-hud font-black text-red-500 animate-bounce';
+      }
+      if (statText) statText.textContent = 'Flew Away!';
+
+      fakeActiveBets.forEach(b => {
+        if (!b.cashedOut) {
+          b.cashedOut = true;
+          b.cashedMultiplier = '0.00';
+          b.winAmount = 0;
+        }
+      });
+      renderLiveBetsTable();
+
+      if (aviatorState.betPlaced && !aviatorState.cashedOut) {
+        showToast(`Flew away before cashout! -₹${aviatorState.betAmount}`, 'error');
+        writeFirebaseLedger('bet_loss', -Math.round(aviatorState.betAmount * 100), `Aviator-Crash-${aviatorState.crashPoint}x`, 'SETTLED');
+      }
+
+      aviatorState.betPlaced = false;
+      updateAviatorButtons();
+
+      setTimeout(() => {
+        if (AppState.activeGame === 'aviator') startAviatorRoundCycle();
+      }, 3500);
+    }
+
+    function renderAviatorCanvas(elapsedSec) {
+      if (!aCtx || !aviatorCanvas) return;
+      const w = aviatorCanvas.width;
+      const h = aviatorCanvas.height;
+      aCtx.clearRect(0, 0, w, h);
+
+      // Grid
+      aCtx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
+      aCtx.lineWidth = 1;
+      for (let x = 0; x < w; x += 35) {
+        aCtx.beginPath();
+        aCtx.moveTo(x, 0);
+        aCtx.lineTo(x * 1.15, h);
+        aCtx.stroke();
+      }
+      for (let y = 0; y < h; y += 35) {
+        aCtx.beginPath();
+        aCtx.moveTo(0, y);
+        aCtx.lineTo(w, y);
+        aCtx.stroke();
+      }
+
+      const progress = Math.min(1, elapsedSec / 15);
+      const startX = 35;
+      const startY = h - 35;
+      const currentX = startX + (w - 75) * progress;
+      const currentY = startY - (h - 75) * Math.pow(progress, 0.85);
+
+      const grad = aCtx.createLinearGradient(0, currentY, 0, h);
+      grad.addColorStop(0, 'rgba(255, 46, 84, 0.45)');
+      grad.addColorStop(0.6, 'rgba(255, 46, 84, 0.15)');
+      grad.addColorStop(1, 'rgba(255, 46, 84, 0.0)');
+
+      aCtx.beginPath();
+      aCtx.moveTo(startX, startY);
+      aCtx.quadraticCurveTo(currentX * 0.45, startY, currentX, currentY);
+      aCtx.lineTo(currentX, startY);
+      aCtx.closePath();
+      aCtx.fillStyle = grad;
+      aCtx.fill();
+
+      aCtx.beginPath();
+      aCtx.moveTo(startX, startY);
+      aCtx.quadraticCurveTo(currentX * 0.45, startY, currentX, currentY);
+      aCtx.strokeStyle = '#ff2e54';
+      aCtx.lineWidth = 4;
+      aCtx.shadowColor = '#ff2e54';
+      aCtx.shadowBlur = 12;
+      aCtx.stroke();
+      aCtx.shadowBlur = 0;
+
+      // Exhaust particles
+      if (Math.random() < 0.6) {
+        aviatorState.particles.push({
+          x: currentX - 10,
+          y: currentY + 4,
+          vx: -(1 + Math.random() * 2),
+          vy: 1 + Math.random() * 1.5,
+          alpha: 1,
+          size: 3 + Math.random() * 3
+        });
+      }
+
+      for (let i = aviatorState.particles.length - 1; i >= 0; i--) {
+        const p = aviatorState.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.04;
+        if (p.alpha <= 0) {
+          aviatorState.particles.splice(i, 1);
+        } else {
+          aCtx.fillStyle = `rgba(255, 183, 3, ${p.alpha})`;
+          aCtx.beginPath();
+          aCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          aCtx.fill();
+        }
+      }
+
+      // Jet vector
+      aCtx.save();
+      aCtx.translate(currentX, currentY);
+      aCtx.rotate(-0.35);
+
+      aCtx.fillStyle = '#ffb703';
+      aCtx.beginPath();
+      aCtx.moveTo(-16, 2);
+      aCtx.lineTo(-28, 4);
+      aCtx.lineTo(-16, 6);
+      aCtx.closePath();
+      aCtx.fill();
+
+      aCtx.fillStyle = '#ff2e54';
+      aCtx.beginPath();
+      aCtx.moveTo(18, 0);
+      aCtx.lineTo(-14, -10);
+      aCtx.lineTo(-8, 0);
+      aCtx.lineTo(-14, 10);
+      aCtx.closePath();
+      aCtx.fill();
+
+      aCtx.fillStyle = '#00f0ff';
+      aCtx.beginPath();
+      aCtx.arc(4, 0, 3, 0, Math.PI * 2);
+      aCtx.fill();
+      aCtx.restore();
+    }
+
+    window.placeAviatorBet = function() {
+      const amt = aviatorState.betAmount;
+      const amtPaise = Math.round(amt * 100);
+
+      if (AppState.wallet.available_balance_paise < amtPaise) {
+        showToast('Insufficient wallet balance to bet!', 'error');
+        return;
+      }
+
+      if (window._firebaseDb) {
+        const { ref, update } = window._fbMethods;
+        update(ref(window._firebaseDb, `users/${AppState.user.id}`), {
+          available_balance_paise: AppState.wallet.available_balance_paise - amtPaise
+        });
+      }
+
+      aviatorState.betPlaced = true;
+      try { playSynthSound('coin'); } catch (e) {}
+      showToast(`Bet of ₹${amt} queued!`, 'success');
+      updateAviatorButtons();
+
+      fakeActiveBets.unshift({
+        id: 'user_bet_' + Date.now(),
+        user: 'You (' + AppState.user.name + ')',
+        bet: amt,
+        targetCashout: 999,
+        cashedOut: false,
+        cashedMultiplier: null,
+        winAmount: 0
+      });
+      renderLiveBetsTable();
+    };
+
+    window.cashoutAviator = function() {
+      if (!aviatorState.betPlaced || aviatorState.status !== 'running' || aviatorState.cashedOut) return;
+
+      aviatorState.cashedOut = true;
+      const winMultiplier = aviatorState.multiplier;
+      const winTotal = Math.round(aviatorState.betAmount * winMultiplier);
+      const winPaise = Math.round(winTotal * 100);
+
+      if (window._firebaseDb) {
+        const { ref, update } = window._fbMethods;
+        update(ref(window._firebaseDb, `users/${AppState.user.id}`), {
+          available_balance_paise: AppState.wallet.available_balance_paise + winPaise
+        });
+      }
+
+      writeFirebaseLedger('bet_win', winPaise, `Aviator-Win-${winMultiplier}x`, 'SETTLED');
+      try { playSynthSound('win'); } catch (e) {}
+      showToast(`Cashed out at ${winMultiplier}x! Won ₹${winTotal}`, 'success');
+      updateAviatorButtons();
+
+      const userBet = fakeActiveBets.find(b => b.user.startsWith('You'));
+      if (userBet) {
+        userBet.cashedOut = true;
+        userBet.cashedMultiplier = winMultiplier.toFixed(2);
+        userBet.winAmount = winTotal;
+        renderLiveBetsTable();
+      }
+    };
+
+    function updateAviatorButtons() {
+      const betBtn = document.getElementById('aviatorBetBtn');
+      const cashoutBtn = document.getElementById('aviatorCashoutBtn');
+      if (!betBtn || !cashoutBtn) return;
+
+      if (aviatorState.status === 'running') {
+        betBtn.disabled = true;
+        betBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        if (aviatorState.betPlaced && !aviatorState.cashedOut) {
+          cashoutBtn.disabled = false;
+          cashoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          cashoutBtn.innerHTML = `Cash Out (₹${(aviatorState.betAmount * aviatorState.multiplier).toFixed(0)})`;
+        } else {
+          cashoutBtn.disabled = true;
+          cashoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          cashoutBtn.textContent = 'Cash Out';
+        }
+      } else {
+        cashoutBtn.disabled = true;
+        cashoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        cashoutBtn.textContent = 'Cash Out';
+
+        if (aviatorState.betPlaced) {
+          betBtn.disabled = true;
+          betBtn.textContent = 'Bet Queued';
+          betBtn.classList.add('opacity-75');
+        } else {
+          betBtn.disabled = false;
+          betBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'opacity-75');
+          betBtn.textContent = 'Place Bet (₹' + aviatorState.betAmount + ')';
+        }
+      }
+    }
+
+    window.adjustBet = function(delta) {
+      try { playSynthSound('click'); } catch (e) {}
+      let current = aviatorState.betAmount + delta;
+      if (current < 10) current = 10;
+      if (current > 5000) current = 5000;
+      aviatorState.betAmount = current;
+      const el = document.getElementById('betAmountDisplay');
+      if (el) el.textContent = current;
+      updateAviatorButtons();
+    };
+
+    window.setQuickBet = function(val) {
+      try { playSynthSound('click'); } catch (e) {}
+      aviatorState.betAmount = val;
+      const el = document.getElementById('betAmountDisplay');
+      if (el) el.textContent = val;
+      updateAviatorButtons();
+    };
+
+    /* FAKE ACTIVE PLAYERS FEED */
+    const FAKE_USER_NAMES = [
+      'Rahul**7', 'Aman_99', 'Vikram**2', 'KingPlayer', 'Lucky77', 
+      'Ravi**81', 'Sunny_VIP', 'Deepak**5', 'Boss888', 'Rohit**44', 
+      'Pooja**1', 'GamerX', 'SkyPro', 'Ajay**90', 'Suresh**3'
+    ];
+    const FAKE_BET_AMOUNTS = [20, 50, 100, 200, 500, 1000];
+    let fakeActiveBets = [];
+
+    function generateInitialFakeBets() {
+      fakeActiveBets = [];
+      const shuffled = [...FAKE_USER_NAMES].sort(() => 0.5 - Math.random()).slice(0, 8);
+      shuffled.forEach((name, idx) => {
+        const bet = FAKE_BET_AMOUNTS[Math.floor(Math.random() * FAKE_BET_AMOUNTS.length)];
+        const willCashoutAt = (1.15 + Math.random() * 3.8).toFixed(2);
+        fakeActiveBets.push({
+          id: 'bet_' + idx + '_' + Date.now(),
+          user: name,
+          bet: bet,
+          targetCashout: parseFloat(willCashoutAt),
+          cashedOut: false,
+          cashedMultiplier: null,
+          winAmount: 0
+        });
+      });
+      renderLiveBetsTable();
+    }
+
+    function updateFakeBetsOnFlight(currentMult) {
+      let changed = false;
+      fakeActiveBets.forEach(b => {
+        if (!b.cashedOut && currentMult >= b.targetCashout) {
+          b.cashedOut = true;
+          b.cashedMultiplier = b.targetCashout.toFixed(2);
+          b.winAmount = Math.round(b.bet * b.targetCashout);
+          changed = true;
+        }
+      });
+      if (changed) renderLiveBetsTable();
+    }
+
+    function renderLiveBetsTable() {
+      const container = document.getElementById('liveBetsContainer');
+      if (!container) return;
+
+      container.innerHTML = fakeActiveBets.map(b => {
+        let statusBadge = '';
+        let winText = '';
+
+        if (b.cashedOut) {
+          statusBadge = `<span class="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 font-hud font-bold text-[10px] border border-emerald-500/30">${b.cashedMultiplier}x</span>`;
+          winText = `<span class="font-hud font-bold text-emerald-400 text-xs">+₹${b.winAmount}</span>`;
+        } else {
+          statusBadge = `<span class="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-hud font-semibold text-[9px] animate-pulse">In Play</span>`;
+          winText = `<span class="text-slate-500 text-[11px] font-mono">-</span>`;
+        }
+
+        return `
+          <div class="grid grid-cols-12 items-center text-xs py-1.5 px-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80 hover:bg-slate-800/40 transition">
+            <div class="col-span-4 flex items-center space-x-1.5 truncate">
+              <span class="w-5 h-5 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 text-[9px] font-bold flex items-center justify-center text-white shrink-0">
+                ${b.user.charAt(0)}
+              </span>
+              <span class="text-[11px] font-bold text-slate-200 truncate">${b.user}</span>
+            </div>
+            <div class="col-span-3 text-right font-hud font-bold text-slate-300 text-[11px]">₹${b.bet}</div>
+            <div class="col-span-2 text-center">${statusBadge}</div>
+            <div class="col-span-3 text-right">${winText}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* FRUIT CHOP ENGINE */
+    let fruitState = {
+      active: false,
+      bet: 20,
+      score: 0,
+      timeLeft: 25,
+      fruits: [],
+      bladePoints: [],
+      splats: [],
+      timerId: null
+    };
+
+    const fruitCanvas = document.getElementById('fruitCanvas');
+    const fCtx = fruitCanvas ? fruitCanvas.getContext('2d') : null;
+
+    const FRUIT_TYPES = [
+      { name: 'watermelon', emoji: '🍉', color: '#ff2e54', radius: 26, points: 1 },
+      { name: 'orange', emoji: '🍊', color: '#f97316', radius: 22, points: 1 },
+      { name: 'lemon', emoji: '🍋', color: '#eab308', radius: 20, points: 1 },
+      { name: 'kiwi', emoji: '🥝', color: '#10b981', radius: 22, points: 1 },
+      { name: 'bomb', emoji: '💣', color: '#475569', radius: 24, points: -3 }
+    ];
+
+    window.setFruitBet = function(val) {
+      try { playSynthSound('click'); } catch (e) {}
+      fruitState.bet = val;
+      const d1 = document.getElementById('fruitBetDisplay');
+      const d2 = document.getElementById('fruitBtnBet');
+      if (d1) d1.textContent = val;
+      if (d2) d2.textContent = val;
+    };
+
+    window.startFruitRound = function() {
+      const amtPaise = Math.round(fruitState.bet * 100);
+      if (AppState.wallet.available_balance_paise < amtPaise) {
+        showToast('Insufficient wallet balance to play!', 'error');
+        return;
+      }
+
+      if (window._firebaseDb) {
+        const { ref, update } = window._fbMethods;
+        update(ref(window._firebaseDb, `users/${AppState.user.id}`), {
+          available_balance_paise: AppState.wallet.available_balance_paise - amtPaise
+        });
+      }
+
+      try { playSynthSound('coin'); } catch (e) {}
+      document.getElementById('fruitStartPrompt')?.classList.add('hidden');
+      
+      fruitState.active = true;
+      fruitState.score = 0;
+      fruitState.timeLeft = 25;
+      fruitState.fruits = [];
+      fruitState.bladePoints = [];
+      fruitState.splats = [];
+
+      document.getElementById('currentFruitScore').textContent = '0';
+      document.getElementById('currentFruitTimer').textContent = '25s';
+
+      if (fruitCanvas) resizeCanvas(fruitCanvas);
+
+      if (fruitState.timerId) clearInterval(fruitState.timerId);
+      fruitState.timerId = setInterval(() => {
+        fruitState.timeLeft--;
+        const timerEl = document.getElementById('currentFruitTimer');
+        if (timerEl) timerEl.textContent = fruitState.timeLeft + 's';
+        if (fruitState.timeLeft <= 0) endFruitRound();
+      }, 1000);
+
+      requestAnimationFrame(fruitGameLoop);
+    };
+
+    function endFruitRound() {
+      clearInterval(fruitState.timerId);
+      fruitState.active = false;
+
+      const won = fruitState.score >= 15;
+      if (won) {
+        const winPaise = Math.round(fruitState.bet * 2 * 100);
+        if (window._firebaseDb) {
+          const { ref, update } = window._fbMethods;
+          update(ref(window._firebaseDb, `users/${AppState.user.id}`), {
+            available_balance_paise: AppState.wallet.available_balance_paise + winPaise
+          });
+        }
+        writeFirebaseLedger('bet_win', winPaise, `FruitChop-Score-${fruitState.score}`, 'SETTLED');
+        try { playSynthSound('win'); } catch (e) {}
+        showToast(`Score ${fruitState.score}! Won 2X Payout (₹${fruitState.bet * 2})`, 'success');
+      } else {
+        writeFirebaseLedger('bet_loss', -Math.round(fruitState.bet * 100), `FruitChop-Score-${fruitState.score}`, 'SETTLED');
+        try { playSynthSound('crash'); } catch (e) {}
+        showToast(`Score was ${fruitState.score}. Needed 15 to win!`, 'error');
+      }
+
+      document.getElementById('fruitStartPrompt')?.classList.remove('hidden');
+    }
+
+    function fruitGameLoop() {
+      if (!fruitState.active || !fCtx || !fruitCanvas) return;
+
+      const w = fruitCanvas.width;
+      const h = fruitCanvas.height;
+      fCtx.clearRect(0, 0, w, h);
+
+      if (Math.random() < 0.05 && fruitState.fruits.length < 5) {
+        const type = FRUIT_TYPES[Math.floor(Math.random() * FRUIT_TYPES.length)];
+        fruitState.fruits.push({
+          ...type,
+          x: 40 + Math.random() * (w - 80),
+          y: h + 20,
+          vx: (Math.random() - 0.5) * 4,
+          vy: -(10 + Math.random() * 4),
+          rotation: 0,
+          rotSpeed: (Math.random() - 0.5) * 0.1,
+          sliced: false
+        });
+      }
+
+      for (let s = fruitState.splats.length - 1; s >= 0; s--) {
+        const sp = fruitState.splats[s];
+        sp.alpha -= 0.02;
+        if (sp.alpha <= 0) {
+          fruitState.splats.splice(s, 1);
+        } else {
+          fCtx.fillStyle = sp.color;
+          fCtx.globalAlpha = sp.alpha;
+          fCtx.beginPath();
+          fCtx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+          fCtx.fill();
+          fCtx.globalAlpha = 1.0;
+        }
+      }
+
+      for (let i = fruitState.fruits.length - 1; i >= 0; i--) {
+        const f = fruitState.fruits[i];
+        f.x += f.vx;
+        f.y += f.vy;
+        f.vy += 0.23;
+        f.rotation += f.rotSpeed;
+
+        fCtx.save();
+        fCtx.translate(f.x, f.y);
+        fCtx.rotate(f.rotation);
+
+        if (!f.sliced) {
+          fCtx.font = '34px serif';
+          fCtx.textAlign = 'center';
+          fCtx.textBaseline = 'middle';
+          fCtx.fillText(f.emoji, 0, 0);
+        } else {
+          fCtx.beginPath();
+          fCtx.arc(0, 0, f.radius / 1.5, 0, Math.PI);
+          fCtx.fillStyle = f.color;
+          fCtx.fill();
+        }
+        fCtx.restore();
+
+        if (f.y > h + 60) fruitState.fruits.splice(i, 1);
+      }
+
+      if (fruitState.bladePoints.length > 1) {
+        fCtx.beginPath();
+        fCtx.moveTo(fruitState.bladePoints[0].x, fruitState.bladePoints[0].y);
+        for (let i = 1; i < fruitState.bladePoints.length; i++) {
+          fCtx.lineTo(fruitState.bladePoints[i].x, fruitState.bladePoints[i].y);
+        }
+        fCtx.strokeStyle = '#00f0ff';
+        fCtx.lineWidth = 4;
+        fCtx.shadowColor = '#00f0ff';
+        fCtx.shadowBlur = 12;
+        fCtx.stroke();
+        fCtx.shadowBlur = 0;
+      }
+
+      if (fruitState.bladePoints.length > 0) fruitState.bladePoints.shift();
+
+      requestAnimationFrame(fruitGameLoop);
+    }
+
+    function handleSlicePointer(clientX, clientY) {
+      if (!fruitState.active || !fruitCanvas) return;
+      const rect = fruitCanvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      fruitState.bladePoints.push({ x, y });
+      if (fruitState.bladePoints.length > 8) fruitState.bladePoints.shift();
+
+      fruitState.fruits.forEach(f => {
+        if (!f.sliced) {
+          const dist = Math.hypot(f.x - x, f.y - y);
+          if (dist < f.radius + 18) {
+            f.sliced = true;
+            try { playSynthSound('slice'); } catch (e) {}
+            fruitState.score += f.points;
+            if (fruitState.score < 0) fruitState.score = 0;
+            const scoreEl = document.getElementById('currentFruitScore');
+            if (scoreEl) scoreEl.textContent = fruitState.score;
+
+            for (let k = 0; k < 6; k++) {
+              fruitState.splats.push({
+                x: f.x + (Math.random() - 0.5) * 30,
+                y: f.y + (Math.random() - 0.5) * 30,
+                size: 2 + Math.random() * 4,
+                color: f.color,
+                alpha: 0.9
+              });
+            }
+          }
+        }
+      });
+    }
+
+    if (fruitCanvas) {
+      fruitCanvas.addEventListener('mousemove', (e) => {
+        if (e.buttons === 1) handleSlicePointer(e.clientX, e.clientY);
+      });
+      fruitCanvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handleSlicePointer(touch.clientX, touch.clientY);
+      }, { passive: false });
+    }
+
+    /* GAME SCREEN LAUNCHER */
+    window.launchGame = function(gameId) {
+      try { playSynthSound('click'); } catch (e) {}
+      AppState.activeGame = gameId;
+
+      document.getElementById('gamesListView')?.classList.add('hidden');
+      document.getElementById('gameScreenContainer')?.classList.remove('hidden');
+
+      const titleV = document.getElementById('currentGameTitle');
+      const aviatorV = document.getElementById('aviatorEngineView');
+      const fruitV = document.getElementById('fruitEngineView');
+
+      if (gameId === 'aviator') {
+        if (titleV) titleV.textContent = 'Aviator 4D Crash';
+        if (aviatorV) aviatorV.classList.remove('hidden');
+        if (fruitV) fruitV.classList.add('hidden');
+        setTimeout(initAviator, 150);
+      } else if (gameId === 'fruit') {
+        if (titleV) titleV.textContent = 'Fruit Chop 3D';
+        if (fruitV) fruitV.classList.remove('hidden');
+        if (aviatorV) aviatorV.classList.add('hidden');
+        setTimeout(() => { if (fruitCanvas) resizeCanvas(fruitCanvas); }, 150);
+      }
+      window.switchTab('games');
+    };
+
+    window.closeCurrentGame = function() {
+      try { playSynthSound('click'); } catch (e) {}
+      AppState.activeGame = null;
+      if (fruitState.timerId) clearInterval(fruitState.timerId);
+      fruitState.active = false;
+      
+      document.getElementById('gameScreenContainer')?.classList.add('hidden');
+      document.getElementById('gamesListView')?.classList.remove('hidden');
+    };
+
+    /* REFERRAL ACTIONS */
+    window.copyReferralLink = function() {
+      const link = `https://t.me/ApexWin_Bot?start=${AppState.user.refCode}`;
+      const tempInput = document.createElement('input');
+      tempInput.value = link;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      try { playSynthSound('click'); } catch (e) {}
+      showToast('Referral link copied!', 'success');
+    };
+
+    window.shareOnTelegram = function() {
+      try { playSynthSound('click'); } catch (e) {}
+      const text = encodeURIComponent(`Play 3D real cash games on ApexWin! Use code ${AppState.user.refCode} to get ₹50 free bonus!`);
+      const url = encodeURIComponent(`https://t.me/ApexWin_Bot?start=${AppState.user.refCode}`);
+      window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
+    };
+
+    window.shareOnWhatsApp = function() {
+      try { playSynthSound('click'); } catch (e) {}
+      const text = encodeURIComponent(`Join ApexWin Real Money Gaming! Code: ${AppState.user.refCode} https://t.me/ApexWin_Bot?start=${AppState.user.refCode}`);
+      window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    };
+
+    /* TOAST HELPER */
+    let toastTimeout = null;
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+      if (!toast || !toastMsg || !toastIcon) return;
+
+      clearTimeout(toastTimeout);
+      toastMsg.textContent = msg;
+
+      if (type === 'success') {
+        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+      } else if (type === 'error') {
+        toastIcon.className = 'fa-solid fa-triangle-exclamation text-red-400';
+      } else {
+        toastIcon.className = 'fa-solid fa-circle-info text-cyan-400';
+      }
+
+      toast.classList.remove('opacity-0', '-translate-y-4', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-4', 'pointer-events-none');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2800);
+    }
+
+    window.resetUserWalletState = function() {
+      if (window._firebaseDb) {
+        const { ref, update } = window._fbMethods;
+        update(ref(window._firebaseDb, `users/${AppState.user.id}`), {
+          available_balance_paise: 0,
+          reserved_balance_paise: 0
+        });
+      }
+      showToast('Player session reset to ₹0.00', 'success');
+    };
+
+    /* INITIALIZATION */
+    document.addEventListener('DOMContentLoaded', () => {
+      syncBalanceDisplays();
+      updateDynamicQr(100);
+
+      window.addEventListener('resize', () => {
+        if (AppState.activeGame === 'aviator' && aviatorCanvas) resizeCanvas(aviatorCanvas);
+        if (AppState.activeGame === 'fruit' && fruitCanvas) resizeCanvas(fruitCanvas);
+      });
+    });
+  </script>
+</body>
+</html>
